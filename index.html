@@ -642,47 +642,91 @@
       group.add(belly);
 
       const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.23, 32, 20),
-        mat(profile.head, 0.62)
+        new THREE.SphereGeometry(0.26, 36, 24),
+        mat(profile.head, 0.6)
       );
-      head.position.set(0.43, 0.22, 0.02);
-      head.scale.set(1.05, 0.95, 0.95);
+      head.position.set(0.4, 0.24, 0.02);
+      head.scale.set(1.08, 1.02, 1);
       head.castShadow = true;
       group.add(head);
 
-      const cheek = new THREE.Mesh(
-        new THREE.SphereGeometry(0.105, 18, 12),
+      const facePatch = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 28, 18),
         mat(profile.cheek, 0.72)
       );
-      cheek.position.set(0.5, 0.18, 0.16);
-      cheek.scale.set(1.05, 0.75, 0.28);
-      group.add(cheek);
+      facePatch.position.set(0.52, 0.2, 0.13);
+      facePatch.scale.set(1.28, 1.0, 0.22);
+      group.add(facePatch);
+
+      const farFacePatch = new THREE.Mesh(
+        new THREE.SphereGeometry(0.13, 24, 16),
+        mat(profile.cheek, 0.72)
+      );
+      farFacePatch.position.set(0.5, 0.2, -0.12);
+      farFacePatch.scale.set(1.0, 0.9, 0.18);
+      group.add(farFacePatch);
+
+      const blushMaterial = mat(0xf0a5a3, 0.78);
+      const blush = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 10), blushMaterial);
+      blush.position.set(0.59, 0.16, 0.205);
+      blush.scale.set(1.45, 0.72, 0.18);
+      group.add(blush);
 
       const beak = new THREE.Mesh(
-        new THREE.ConeGeometry(0.055, 0.28, 24),
+        new THREE.SphereGeometry(0.075, 24, 14),
         mat(profile.beak, 0.5)
       );
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(0.66, 0.19, 0.02);
-      beak.scale.set(0.72, 1, 0.72);
+      beak.position.set(0.67, 0.19, 0.02);
+      beak.scale.set(1.15, 0.68, 0.78);
       group.add(beak);
 
-      const mask = new THREE.Mesh(
-        new THREE.SphereGeometry(0.095, 18, 10),
-        mat(0x151515, 0.48)
+      const lowerBeak = new THREE.Mesh(
+        new THREE.SphereGeometry(0.058, 20, 12),
+        mat(new THREE.Color(profile.beak).offsetHSL(0, -0.05, 0.16).getHex(), 0.56)
       );
-      mask.position.set(0.48, 0.245, 0.18);
-      mask.scale.set(1.55, 0.34, 0.14);
-      mask.rotation.z = -0.08;
-      group.add(mask);
+      lowerBeak.position.set(0.672, 0.152, 0.02);
+      lowerBeak.scale.set(1.0, 0.34, 0.68);
+      group.add(lowerBeak);
 
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 14, 10), mat(0x090909, 0.22));
-      eye.position.set(0.535, 0.265, 0.235);
-      group.add(eye);
+      const beakLine = new THREE.Mesh(
+        new THREE.BoxGeometry(0.092, 0.008, 0.108),
+        mat(0x493d3d, 0.5)
+      );
+      beakLine.position.set(0.715, 0.178, 0.02);
+      group.add(beakLine);
 
-      const eyeSpark = new THREE.Mesh(new THREE.SphereGeometry(0.007, 8, 6), mat(0xffffff, 0.12));
-      eyeSpark.position.set(0.547, 0.274, 0.255);
-      group.add(eyeSpark);
+      const browMaterial = mat(new THREE.Color(profile.head).offsetHSL(0, 0.08, -0.18).getHex(), 0.66);
+      [-0.12, 0.12].forEach((zSide) => {
+        const brow = new THREE.Mesh(new THREE.SphereGeometry(0.052, 16, 10), browMaterial);
+        brow.position.set(0.53, 0.305, zSide);
+        brow.scale.set(1.7, 0.28, 0.18);
+        brow.rotation.z = zSide > 0 ? -0.38 : 0.38;
+        group.add(brow);
+      });
+
+      const eyeMaterial = mat(0x151515, 0.18);
+      const sparkleMaterial = mat(0xffffff, 0.08);
+      [-0.105, 0.105].forEach((zSide) => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.048, 20, 14), eyeMaterial);
+        eye.position.set(0.59, 0.245, zSide);
+        eye.scale.set(0.82, 1.16, 0.82);
+        group.add(eye);
+
+        const eyeSpark = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), sparkleMaterial);
+        eyeSpark.position.set(0.612, 0.26, zSide + (zSide > 0 ? 0.018 : -0.018));
+        group.add(eyeSpark);
+      });
+
+      [-0.055, 0, 0.055].forEach((zSide, tuftIndex) => {
+        const tuft = new THREE.Mesh(
+          new THREE.ConeGeometry(0.018, 0.18, 10),
+          mat(profile.head, 0.62)
+        );
+        tuft.position.set(0.32 + tuftIndex * 0.015, 0.48, zSide);
+        tuft.rotation.z = -0.28 + tuftIndex * 0.14;
+        tuft.rotation.x = zSide * 1.8;
+        group.add(tuft);
+      });
 
       const wing = new THREE.Mesh(
         new THREE.SphereGeometry(0.24, 28, 18),
@@ -739,7 +783,7 @@
         spot.y + 0.18 + layer * 0.32,
         0.92 + spot.z * 0.28 + layer * 0.08
       );
-      group.rotation.y = spot.r;
+      group.rotation.y = -Math.PI / 2 + spot.r * 0.35;
       group.scale.setScalar(scale);
       group.userData.floatPhase = index * 0.77;
       group.userData.baseY = group.position.y;
