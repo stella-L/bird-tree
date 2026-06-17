@@ -202,6 +202,82 @@
       text-underline-offset: 3px;
     }
 
+    .visitor {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .visitor strong {
+      color: var(--ink);
+    }
+
+    .small {
+      min-height: 30px;
+      padding: 0 9px;
+      background: transparent;
+      color: var(--action);
+      border: 1px solid rgba(35, 101, 168, 0.35);
+      font-size: 12px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(25, 35, 28, 0.36);
+      pointer-events: auto;
+    }
+
+    .modal[hidden] {
+      display: none;
+    }
+
+    .dialog {
+      width: min(100%, 380px);
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 54px rgba(25, 35, 28, 0.24);
+    }
+
+    .dialog h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .dialog p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .name-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
     @media (max-width: 720px) {
       body {
         overflow: auto;
@@ -232,6 +308,11 @@
         <p class="sub">관찰한 새 이름을 입력하면 나뭇가지 위에 한 마리씩 올라갑니다.</p>
       </header>
 
+      <div class="visitor">
+        <span>기록자 <strong id="visitorNameLabel"></strong></span>
+        <button class="small" id="changeVisitor" type="button">변경</button>
+      </div>
+
       <form id="birdForm">
         <input id="birdInput" name="bird" type="text" maxlength="36" autocomplete="off" list="birdSuggestions" placeholder="예: 박새, 물총새, 직박구리" aria-label="관찰한 새 이름">
         <datalist id="birdSuggestions"></datalist>
@@ -244,14 +325,28 @@
       </div>
 
       <div class="bird-list" id="birdList"></div>
+      <div class="status" id="syncStatus"></div>
       <div class="source">조류명/서식지: <a href="https://www.science.go.kr/mps/scienceSubject/bird/list.do" target="_blank" rel="noopener">국립중앙과학관 우리나라 텃새</a></div>
     </section>
   </main>
+
+  <div class="modal" id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameTitle" hidden>
+    <div class="dialog">
+      <h2 id="nameTitle">이름 입력</h2>
+      <p>새를 저장한 사람을 표시하기 위해 이름만 저장합니다.</p>
+      <form class="name-form" id="nameForm">
+        <input id="nameInput" name="name" type="text" maxlength="20" autocomplete="name" placeholder="이름" aria-label="이름">
+        <button type="submit">시작</button>
+      </form>
+    </div>
+  </div>
 
   <script type="module">
     import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
 
     const STORAGE_KEY = "bird-tree-sightings";
+    const VISITOR_KEY = "bird-tree-visitor-name";
+    const APPS_SCRIPT_URL = "";
     const canvas = document.querySelector("#scene");
     const form = document.querySelector("#birdForm");
     const input = document.querySelector("#birdInput");
@@ -259,6 +354,12 @@
     const birdCount = document.querySelector("#birdCount");
     const clearButton = document.querySelector("#clearBirds");
     const birdSuggestions = document.querySelector("#birdSuggestions");
+    const nameModal = document.querySelector("#nameModal");
+    const nameForm = document.querySelector("#nameForm");
+    const nameInput = document.querySelector("#nameInput");
+    const visitorNameLabel = document.querySelector("#visitorNameLabel");
+    const changeVisitor = document.querySelector("#changeVisitor");
+    const syncStatus = document.querySelector("#syncStatus");
 
     const knownBirds = [
       { name: "검은등할미새", habitat: "강, 연못, 물가" },
@@ -455,14 +556,13 @@
       });
     }
 
-    function createPerchLabel(name) {
+    function createPerchLabel(name, visitorName) {
       const textureCanvas = document.createElement("canvas");
       const context = textureCanvas.getContext("2d");
-      const width = 256;
-      const height = 82;
+      const width = 320;
+      const height = 104;
       textureCanvas.width = width;
       textureCanvas.height = height;
-      context.font = "700 28px system-ui, -apple-system, sans-serif";
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.fillStyle = "rgba(255, 255, 255, 0.88)";
@@ -471,13 +571,18 @@
       context.strokeStyle = "rgba(25, 35, 28, 0.18)";
       context.stroke();
       context.fillStyle = "#19231c";
-      fitText(context, name, width - 40, 28);
-      context.fillText(name, width / 2, height / 2 + 1);
+      fitText(context, name, width - 42, 28);
+      context.fillText(name, width / 2, 43);
+      if (visitorName) {
+        context.fillStyle = "#2365a8";
+        fitText(context, `by ${visitorName}`, width - 46, 22);
+        context.fillText(`by ${visitorName}`, width / 2, 70);
+      }
 
       const texture = new THREE.CanvasTexture(textureCanvas);
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-      sprite.scale.set(1.36, 0.44, 1);
-      sprite.position.y = 0.72;
+      sprite.scale.set(1.78, 0.58, 1);
+      sprite.position.y = 0.86;
       return sprite;
     }
 
@@ -628,7 +733,7 @@
         });
       });
 
-      group.add(createPerchLabel(sighting.name));
+      group.add(createPerchLabel(sighting.name, sighting.visitorName));
       group.position.set(
         spot.x + ((layer % 2) * 0.24 - 0.12),
         spot.y + 0.18 + layer * 0.32,
@@ -655,6 +760,83 @@
     }
 
     let sightings = loadSightings();
+    let visitorName = localStorage.getItem(VISITOR_KEY) || "";
+
+    function setVisitorName(name) {
+      visitorName = name.trim().replace(/\s+/g, " ");
+      localStorage.setItem(VISITOR_KEY, visitorName);
+      visitorNameLabel.textContent = visitorName || "미입력";
+      nameModal.hidden = Boolean(visitorName);
+      if (visitorName) input.focus();
+    }
+
+    function requestVisitorName() {
+      nameInput.value = visitorName;
+      nameModal.hidden = false;
+      setTimeout(() => nameInput.focus(), 0);
+    }
+
+    async function sendSightingToSheet(sighting) {
+      if (!APPS_SCRIPT_URL) {
+        syncStatus.textContent = "Apps Script URL을 넣으면 Google Sheets에 저장됩니다.";
+        return;
+      }
+
+      syncStatus.textContent = "Google Sheets에 저장 중...";
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(sighting)
+        });
+        syncStatus.textContent = "Google Sheets 저장 요청 완료";
+      } catch {
+        syncStatus.textContent = "Google Sheets 저장에 실패했습니다.";
+      }
+    }
+
+    function loadSightingsFromSheet() {
+      if (!APPS_SCRIPT_URL) return;
+
+      const callbackName = `loadBirdTree_${Date.now()}`;
+      const script = document.createElement("script");
+      const separator = APPS_SCRIPT_URL.includes("?") ? "&" : "?";
+
+      syncStatus.textContent = "Google Sheets 기록을 불러오는 중...";
+      window[callbackName] = (rows) => {
+        delete window[callbackName];
+        script.remove();
+
+        if (!Array.isArray(rows)) {
+          syncStatus.textContent = "Google Sheets 기록을 불러오지 못했습니다.";
+          return;
+        }
+
+        sightings = rows
+          .filter((item) => item && item.name)
+          .map((item) => ({
+            visitorName: item.visitorName || "",
+            name: item.name,
+            habitat: item.habitat || birdInfo.get(item.name)?.habitat || "",
+            createdAt: Number(item.createdAt) || Date.now(),
+            savedAt: item.savedAt || ""
+          }))
+          .slice(-48);
+        saveSightings();
+        refreshBirds();
+        syncStatus.textContent = sightings.length ? "Google Sheets 기록을 불러왔습니다." : "";
+      };
+
+      script.onerror = () => {
+        delete window[callbackName];
+        script.remove();
+        syncStatus.textContent = "Google Sheets 기록을 불러오지 못했습니다.";
+      };
+
+      script.src = `${APPS_SCRIPT_URL}${separator}callback=${encodeURIComponent(callbackName)}`;
+      document.body.append(script);
+    }
 
     function renderBirdList() {
       birdCount.textContent = `${sightings.length}마리`;
@@ -679,7 +861,8 @@
         const name = document.createElement("span");
         name.className = "bird-name";
         const info = birdInfo.get(sighting.name);
-        name.textContent = info ? `${sighting.name} · ${info.habitat}` : sighting.name;
+        const owner = sighting.visitorName ? ` · ${sighting.visitorName}` : "";
+        name.textContent = info ? `${sighting.name}${owner} · ${info.habitat}` : `${sighting.name}${owner}`;
 
         const remove = document.createElement("button");
         remove.className = "remove";
@@ -707,12 +890,33 @@
       event.preventDefault();
       const name = input.value.trim().replace(/\s+/g, " ");
       if (!name) return;
+      if (!visitorName) {
+        requestVisitorName();
+        return;
+      }
       const info = birdInfo.get(name);
-      sightings.push({ name, habitat: info?.habitat || "", createdAt: Date.now() });
+      const sighting = {
+        visitorName,
+        name,
+        habitat: info?.habitat || "",
+        createdAt: Date.now(),
+        savedAt: new Date().toISOString()
+      };
+      sightings.push(sighting);
       input.value = "";
       saveSightings();
       refreshBirds();
+      sendSightingToSheet(sighting);
     });
+
+    nameForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = nameInput.value.trim().replace(/\s+/g, " ");
+      if (!name) return;
+      setVisitorName(name);
+    });
+
+    changeVisitor.addEventListener("click", requestVisitorName);
 
     clearButton.addEventListener("click", () => {
       sightings = [];
@@ -750,7 +954,10 @@
     });
 
     createTree();
+    setVisitorName(visitorName);
+    if (!visitorName) requestVisitorName();
     refreshBirds();
+    loadSightingsFromSheet();
     resize();
     window.addEventListener("resize", resize);
     requestAnimationFrame(animate);
