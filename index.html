@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>탐조 나무</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #19231c;
+      --muted: #5b665e;
+      --panel: rgba(255, 255, 255, 0.88);
+      --line: rgba(25, 35, 28, 0.15);
+      --leaf: #2d6d48;
+      --action: #2365a8;
+      --danger: #b13f37;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: #d9edf1;
+    }
+
+    #scene {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      pointer-events: none;
+    }
+
+    .panel {
+      align-self: stretch;
+      margin: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 16px 44px rgba(34, 49, 42, 0.16);
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: calc(100vh - 32px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    input {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      font: inherit;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.92);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(35, 101, 168, 0.65);
+      box-shadow: 0 0 0 3px rgba(35, 101, 168, 0.16);
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 0 13px;
+      min-height: 44px;
+      font: inherit;
+      font-weight: 700;
+      color: #fff;
+      background: var(--action);
+      cursor: pointer;
+    }
+
+    button:hover {
+      filter: brightness(0.95);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding-top: 4px;
+      border-top: 1px solid var(--line);
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .clear {
+      min-height: 34px;
+      padding: 0 10px;
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(177, 63, 55, 0.35);
+    }
+
+    .bird-list {
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+      padding-right: 2px;
+    }
+
+    .bird-item {
+      display: grid;
+      grid-template-columns: 14px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 14px;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    .bird-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 650;
+    }
+
+    .remove {
+      min-width: 30px;
+      min-height: 30px;
+      padding: 0;
+      line-height: 1;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.65);
+      color: var(--muted);
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.45;
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .source {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .source a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    @media (max-width: 720px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .panel {
+        margin: 10px;
+        max-height: min(52vh, 430px);
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <main class="app">
+    <section class="panel" aria-label="탐조 기록">
+      <header>
+        <h1>탐조 나무</h1>
+        <p class="sub">관찰한 새 이름을 입력하면 나뭇가지 위에 한 마리씩 올라갑니다.</p>
+      </header>
+
+      <form id="birdForm">
+        <input id="birdInput" name="bird" type="text" maxlength="36" autocomplete="off" list="birdSuggestions" placeholder="예: 박새, 물총새, 직박구리" aria-label="관찰한 새 이름">
+        <datalist id="birdSuggestions"></datalist>
+        <button type="submit">올리기</button>
+      </form>
+
+      <div class="toolbar">
+        <div class="count" id="birdCount">0마리</div>
+        <button class="clear" id="clearBirds" type="button">비우기</button>
+      </div>
+
+      <div class="bird-list" id="birdList"></div>
+      <div class="source">조류명/서식지: <a href="https://www.science.go.kr/mps/scienceSubject/bird/list.do" target="_blank" rel="noopener">국립중앙과학관 우리나라 텃새</a></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+
+    const STORAGE_KEY = "bird-tree-sightings";
+    const canvas = document.querySelector("#scene");
+    const form = document.querySelector("#birdForm");
+    const input = document.querySelector("#birdInput");
+    const birdList = document.querySelector("#birdList");
+    const birdCount = document.querySelector("#birdCount");
+    const clearButton = document.querySelector("#clearBirds");
+    const birdSuggestions = document.querySelector("#birdSuggestions");
+
+    const knownBirds = [
+      { name: "검은등할미새", habitat: "강, 연못, 물가" },
+      { name: "검은머리갈매기", habitat: "갯벌, 하구" },
+      { name: "검은머리물떼새", habitat: "서해안의 강 하구나 해안, 인근 섬" },
+      { name: "곤줄박이", habitat: "산림, 공원, 인가 주변 등" },
+      { name: "괭이갈매기", habitat: "해안가, 하구 등" },
+      { name: "까마귀", habitat: "농경지, 산지, 하천, 강하구, 개활지" },
+      { name: "까치", habitat: "도시, 농촌 등 마을 주변" },
+      { name: "깝작도요", habitat: "해안, 하구, 강, 염전 등" },
+      { name: "꿩", habitat: "농경지, 공원, 산림 가장자리, 산림 초지 등" },
+      { name: "노랑턱멧새", habitat: "마을 주변 덤불이 있는 개활지, 농경지 부근" },
+      { name: "논병아리", habitat: "강, 호수, 저수지" },
+      { name: "동고비", habitat: "산지와 임야, 도시공원 등 주로 활엽수림" },
+      { name: "동박새", habitat: "바닷가나 섬 등의 우거진 상록활엽수림" },
+      { name: "딱새", habitat: "산림 가장자리, 덤불, 강변 잡목 숲, 인가" },
+      { name: "때까치", habitat: "마을 주변 야산, 개활지" },
+      { name: "매", habitat: "해안의 절벽, 섬" },
+      { name: "멧비둘기", habitat: "개활지, 농경지, 공원, 산림" },
+      { name: "물까치", habitat: "평지, 낮은산, 대나무숲 등" },
+      { name: "물닭", habitat: "호소, 강, 하구 등 습지" },
+      { name: "물총새", habitat: "계곡, 하천, 호수" },
+      { name: "민물가마우지", habitat: "해안, 하구, 호수" },
+      { name: "바다직박구리", habitat: "내륙과 해안의 바위 절벽" },
+      { name: "박새", habitat: "산림, 공원, 정원 등" },
+      { name: "방울새", habitat: "평지와 언덕, 농촌 주변의 낮은 산" },
+      { name: "붉은머리오목눈이", habitat: "관목, 갈대밭 또는 풀숲" },
+      { name: "쇠가마우지", habitat: "해안, 바위섬" },
+      { name: "쇠딱다구리", habitat: "공원, 산림" },
+      { name: "쇠물닭", habitat: "전국의 습지, 저수지, 연못, 강가" },
+      { name: "쇠박새", habitat: "산림, 공원, 정원 등" },
+      { name: "쇠백로", habitat: "하천, 강, 하구, 논, 습지, 갯벌, 해안" },
+      { name: "수리부엉이", habitat: "암벽, 산림 암벽 절개지, 바위산 등" },
+      { name: "어치", habitat: "산림지역" },
+      { name: "오목눈이", habitat: "인가 주변 산림, 공원, 정원 등" },
+      { name: "오색딱다구리", habitat: "농경지 주변 나무, 산림" },
+      { name: "왜가리", habitat: "하천, 강, 하구, 논, 습지, 갯벌, 해안" },
+      { name: "원앙", habitat: "내륙의 숲과 주변 계곡, 강, 하천" },
+      { name: "중대백로", habitat: "하천, 강, 하구, 논, 습지, 갯벌, 해안" },
+      { name: "직박구리", habitat: "산림, 공원, 정원, 아파트 주변 정원수 등" },
+      { name: "집비둘기", habitat: "산림, 강과 하천 수변, 공원, 도심 등" },
+      { name: "찌르레기", habitat: "저지대 평야, 낮은 산지, 농촌" },
+      { name: "참새", habitat: "도시, 농촌 등 마을 주변" },
+      { name: "청둥오리", habitat: "저수지, 강, 하구, 하천 등" },
+      { name: "청딱다구리", habitat: "공원, 산림" },
+      { name: "큰부리까마귀", habitat: "농촌, 도시, 산지, 바닷가 등지의 숲 속" },
+      { name: "큰오색딱다구리", habitat: "공원, 산림" },
+      { name: "해오라기", habitat: "산림, 저수지, 하천, 강, 호수 등" },
+      { name: "황조롱이", habitat: "산림, 해안, 강, 농경지 등" },
+      { name: "흑비둘기", habitat: "울릉도, 가거도, 제주도, 흑산도 등 도서" },
+      { name: "흰목물떼새", habitat: "하천, 강가의 모래밭과 자갈밭" },
+      { name: "흰뺨검둥오리", habitat: "강, 하구, 저수지, 호수, 해안" }
+    ];
+
+    const birdInfo = new Map(knownBirds.map((bird) => [bird.name, bird]));
+
+    const palette = [
+      0x2f6b9a, 0xd47b34, 0x305f45, 0xb84943, 0x6d5aa8,
+      0xe2b441, 0x2d8d8d, 0x7b5b3a, 0x5f7f3a, 0x9a4d73
+    ];
+
+    const birdProfiles = {
+      "박새": { body: 0xd7d0aa, head: 0x202522, wing: 0x536f8d, belly: 0xf2e7bf, cheek: 0xffffff, tail: 0x47576d, beak: 0x2b2b25 },
+      "물총새": { body: 0x1d8fa4, head: 0x24789b, wing: 0x186fa7, belly: 0xd88337, cheek: 0xf1d6a0, tail: 0x146b9d, beak: 0x4b2d22 },
+      "직박구리": { body: 0x6b6d62, head: 0x4a4d47, wing: 0x5a5f58, belly: 0xc9c0a6, cheek: 0xdad1bd, tail: 0x555b5c, beak: 0x242421 },
+      "참새": { body: 0x9a7045, head: 0x7f4e2f, wing: 0x6e4a2e, belly: 0xd8c7a4, cheek: 0xe7d6b8, tail: 0x5a432b, beak: 0x594023 },
+      "까치": { body: 0xf6f7ef, head: 0x171d23, wing: 0x153f5a, belly: 0xffffff, cheek: 0xffffff, tail: 0x174f64, beak: 0x1d1d1b },
+      "까마귀": { body: 0x151716, head: 0x101211, wing: 0x202725, belly: 0x1c1f1e, cheek: 0x151716, tail: 0x111413, beak: 0x111111 },
+      "동박새": { body: 0x8da33f, head: 0x758d37, wing: 0x637c34, belly: 0xe8dfba, cheek: 0xffffff, tail: 0x54672f, beak: 0x2d2922 },
+      "딱새": { body: 0x6a6258, head: 0x4c514f, wing: 0x343a3f, belly: 0xd77a3a, cheek: 0xe8c59b, tail: 0xa9592f, beak: 0x24211f },
+      "오목눈이": { body: 0xd8c8ad, head: 0xf0e6d4, wing: 0x6b5a4c, belly: 0xeadfc6, cheek: 0xf7eee1, tail: 0x3a332d, beak: 0x2f2922 },
+      "원앙": { body: 0xb77132, head: 0x2f5d50, wing: 0x7a4a2b, belly: 0xf1d6a1, cheek: 0xf7efe2, tail: 0x2e3f45, beak: 0xc84329 },
+      "청둥오리": { body: 0x9a8a69, head: 0x1f6b58, wing: 0x395f9d, belly: 0xd5c3a0, cheek: 0xffffff, tail: 0x3c3730, beak: 0xd7a637 },
+      "흰뺨검둥오리": { body: 0x5e584d, head: 0x3c3932, wing: 0x4b463e, belly: 0x8a806d, cheek: 0xf2efe4, tail: 0x2e2b27, beak: 0x2a2925 },
+      "왜가리": { body: 0xa6aaa5, head: 0xd8d9d2, wing: 0x6d7474, belly: 0xc8c7bd, cheek: 0xf0eee5, tail: 0x5e6565, beak: 0xd5a642 },
+      "쇠백로": { body: 0xf7f6ea, head: 0xffffff, wing: 0xefefe7, belly: 0xffffff, cheek: 0xffffff, tail: 0xe8e8df, beak: 0x262521 },
+      "황조롱이": { body: 0xb56c39, head: 0x83909a, wing: 0x8b4b2c, belly: 0xd8b07d, cheek: 0xe4d0ad, tail: 0x7f5b42, beak: 0x34322d }
+    };
+
+    const branchSpots = [
+      { x: -1.65, y: 2.6, z: 0.2, r: -0.24 },
+      { x: 2.65, y: 2.75, z: 0.12, r: 0.34 },
+      { x: -1.0, y: 3.42, z: 0.02, r: -0.12 },
+      { x: 1.75, y: 3.68, z: -0.04, r: 0.18 },
+      { x: -1.85, y: 4.05, z: -0.12, r: -0.2 },
+      { x: 3.25, y: 3.28, z: -0.14, r: 0.28 },
+      { x: -1.0, y: 4.25, z: 0.06, r: -0.08 },
+      { x: 0.92, y: 4.36, z: 0.06, r: 0.08 },
+      { x: -1.62, y: 4.72, z: -0.14, r: -0.14 },
+      { x: 2.35, y: 4.18, z: -0.18, r: 0.22 },
+      { x: -0.22, y: 5.02, z: 0.02, r: -0.04 },
+      { x: 1.42, y: 5.04, z: -0.08, r: 0.12 }
+    ];
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xd9edf1, 12, 26);
+
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(0, 3.6, 10.8);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x9fb688, 2.1);
+    scene.add(hemi);
+
+    const sun = new THREE.DirectionalLight(0xfff1cf, 3.4);
+    sun.position.set(-4, 9, 7);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    scene.add(sun);
+
+    const root = new THREE.Group();
+    scene.add(root);
+
+    const birdsGroup = new THREE.Group();
+    root.add(birdsGroup);
+
+    const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x7a5237, roughness: 0.88 });
+    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x6f442e, roughness: 0.9 });
+    const leafMaterials = [0x3c8a53, 0x559b55, 0x7aa342].map((color) => (
+      new THREE.MeshStandardMaterial({ color, roughness: 0.78 })
+    ));
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(8.5, 96),
+      new THREE.MeshStandardMaterial({ color: 0xa8c99c, roughness: 0.95 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.04;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(42, 32, 16),
+      new THREE.MeshBasicMaterial({ color: 0xd9edf1, side: THREE.BackSide })
+    );
+    scene.add(sky);
+
+    function makeCylinderBetween(start, end, radius, material) {
+      const direction = new THREE.Vector3().subVectors(end, start);
+      const midpoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+      const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(radius * 0.68, radius, direction.length(), 18),
+        material
+      );
+      mesh.position.copy(midpoint);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    function createTree() {
+      const trunk = makeCylinderBetween(
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 4.5, 0),
+        0.42,
+        trunkMaterial
+      );
+      root.add(trunk);
+
+      const branches = [
+        [[0, 1.9, 0], [-3.25, 2.62, 0.08], 0.16],
+        [[0, 2.15, 0], [3.05, 2.82, 0.05], 0.15],
+        [[0, 2.88, 0], [-2.38, 3.58, -0.12], 0.13],
+        [[0, 3.02, 0], [2.22, 3.78, -0.1], 0.12],
+        [[0, 3.55, 0], [-1.22, 4.42, 0.04], 0.11],
+        [[0, 3.72, 0], [1.34, 4.52, 0.02], 0.1],
+        [[0, 4.1, 0], [-0.34, 5.18, 0], 0.09]
+      ];
+
+      branches.forEach(([a, b, radius]) => {
+        root.add(makeCylinderBetween(new THREE.Vector3(...a), new THREE.Vector3(...b), radius, branchMaterial));
+      });
+
+      const leafPositions = [
+        [-3.2, 2.95, -0.18, 1.15], [3.05, 3.1, -0.15, 1.12], [-2.2, 3.85, -0.28, 1.0],
+        [2.18, 4.02, -0.25, 1.0], [-1.05, 4.6, -0.1, 1.06], [1.2, 4.72, -0.12, 1.0],
+        [0.0, 5.25, -0.16, 1.22], [-0.45, 3.85, -0.34, 1.05], [0.52, 3.92, -0.36, 1.05]
+      ];
+
+      leafPositions.forEach(([x, y, z, size], index) => {
+        const leaves = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(size, 1),
+          leafMaterials[index % leafMaterials.length]
+        );
+        leaves.position.set(x, y, z);
+        leaves.scale.set(1.25, 0.86, 0.95);
+        leaves.castShadow = true;
+        root.add(leaves);
+      });
+    }
+
+    function createPerchLabel(name) {
+      const textureCanvas = document.createElement("canvas");
+      const context = textureCanvas.getContext("2d");
+      const width = 256;
+      const height = 82;
+      textureCanvas.width = width;
+      textureCanvas.height = height;
+      context.font = "700 28px system-ui, -apple-system, sans-serif";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "rgba(255, 255, 255, 0.88)";
+      roundRect(context, 10, 12, width - 20, height - 24, 18);
+      context.fill();
+      context.strokeStyle = "rgba(25, 35, 28, 0.18)";
+      context.stroke();
+      context.fillStyle = "#19231c";
+      fitText(context, name, width - 40, 28);
+      context.fillText(name, width / 2, height / 2 + 1);
+
+      const texture = new THREE.CanvasTexture(textureCanvas);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+      sprite.scale.set(1.36, 0.44, 1);
+      sprite.position.y = 0.72;
+      return sprite;
+    }
+
+    function roundRect(context, x, y, width, height, radius) {
+      context.beginPath();
+      context.moveTo(x + radius, y);
+      context.arcTo(x + width, y, x + width, y + height, radius);
+      context.arcTo(x + width, y + height, x, y + height, radius);
+      context.arcTo(x, y + height, x, y, radius);
+      context.arcTo(x, y, x + width, y, radius);
+      context.closePath();
+    }
+
+    function fitText(context, text, maxWidth, startSize) {
+      let size = startSize;
+      while (size > 13) {
+        context.font = `700 ${size}px system-ui, -apple-system, sans-serif`;
+        if (context.measureText(text).width <= maxWidth) return;
+        size -= 1;
+      }
+    }
+
+    function createBird(sighting, index) {
+      const fallback = palette[index % palette.length];
+      const shifted = new THREE.Color(fallback);
+      const profile = birdProfiles[sighting.name] || {
+        body: fallback,
+        head: shifted.clone().offsetHSL(-0.02, 0.03, -0.1).getHex(),
+        wing: shifted.clone().offsetHSL(-0.04, 0.08, -0.18).getHex(),
+        belly: shifted.clone().offsetHSL(0.05, -0.18, 0.28).getHex(),
+        cheek: 0xf7efe1,
+        tail: shifted.clone().offsetHSL(-0.02, 0.06, -0.25).getHex(),
+        beak: 0xd49a35
+      };
+      const spot = branchSpots[index % branchSpots.length];
+      const layer = Math.floor(index / branchSpots.length);
+      const group = new THREE.Group();
+      const scale = 0.78 + (index % 5) * 0.035;
+      const mat = (color, roughness = 0.66) => new THREE.MeshStandardMaterial({ color, roughness });
+
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(0.34, 32, 22),
+        mat(profile.body, 0.7)
+      );
+      body.scale.set(1.45, 0.86, 0.9);
+      body.rotation.z = -0.08;
+      body.castShadow = true;
+      group.add(body);
+
+      const belly = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 24, 16),
+        mat(profile.belly, 0.76)
+      );
+      belly.position.set(0.1, -0.08, 0.25);
+      belly.scale.set(1.35, 0.68, 0.34);
+      belly.rotation.z = -0.04;
+      group.add(belly);
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.23, 32, 20),
+        mat(profile.head, 0.62)
+      );
+      head.position.set(0.43, 0.22, 0.02);
+      head.scale.set(1.05, 0.95, 0.95);
+      head.castShadow = true;
+      group.add(head);
+
+      const cheek = new THREE.Mesh(
+        new THREE.SphereGeometry(0.105, 18, 12),
+        mat(profile.cheek, 0.72)
+      );
+      cheek.position.set(0.5, 0.18, 0.16);
+      cheek.scale.set(1.05, 0.75, 0.28);
+      group.add(cheek);
+
+      const beak = new THREE.Mesh(
+        new THREE.ConeGeometry(0.055, 0.28, 24),
+        mat(profile.beak, 0.5)
+      );
+      beak.rotation.z = -Math.PI / 2;
+      beak.position.set(0.66, 0.19, 0.02);
+      beak.scale.set(0.72, 1, 0.72);
+      group.add(beak);
+
+      const mask = new THREE.Mesh(
+        new THREE.SphereGeometry(0.095, 18, 10),
+        mat(0x151515, 0.48)
+      );
+      mask.position.set(0.48, 0.245, 0.18);
+      mask.scale.set(1.55, 0.34, 0.14);
+      mask.rotation.z = -0.08;
+      group.add(mask);
+
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 14, 10), mat(0x090909, 0.22));
+      eye.position.set(0.535, 0.265, 0.235);
+      group.add(eye);
+
+      const eyeSpark = new THREE.Mesh(new THREE.SphereGeometry(0.007, 8, 6), mat(0xffffff, 0.12));
+      eyeSpark.position.set(0.547, 0.274, 0.255);
+      group.add(eyeSpark);
+
+      const wing = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 28, 18),
+        mat(profile.wing, 0.72)
+      );
+      wing.position.set(-0.05, 0.02, 0.24);
+      wing.scale.set(1.35, 0.34, 0.44);
+      wing.rotation.z = -0.34;
+      wing.rotation.y = 0.08;
+      group.add(wing);
+
+      [-0.12, 0.0, 0.12].forEach((offset, featherIndex) => {
+        const feather = new THREE.Mesh(
+          new THREE.BoxGeometry(0.36, 0.032, 0.018),
+          mat(new THREE.Color(profile.wing).offsetHSL(0, 0, -0.08 - featherIndex * 0.03).getHex(), 0.78)
+        );
+        feather.position.set(-0.07 - featherIndex * 0.04, -0.01 - featherIndex * 0.035, 0.285 + offset * 0.22);
+        feather.rotation.z = -0.45;
+        feather.rotation.y = 0.14;
+        group.add(feather);
+      });
+
+      [-0.09, 0.0, 0.09].forEach((offset, tailIndex) => {
+        const tail = new THREE.Mesh(
+          new THREE.ConeGeometry(0.06, 0.46, 4),
+          mat(new THREE.Color(profile.tail).offsetHSL(0, 0, tailIndex * -0.04).getHex(), 0.74)
+        );
+        tail.rotation.z = Math.PI / 2;
+        tail.rotation.y = offset * 1.8;
+        tail.position.set(-0.5, -0.02, offset);
+        tail.scale.set(0.8, 1, 0.45);
+        group.add(tail);
+      });
+
+      const legMaterial = mat(0x553a24, 0.82);
+      [-0.12, 0.1].forEach((x) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.23, 8), legMaterial);
+        leg.position.set(x, -0.32, 0.04);
+        leg.rotation.z = 0.05;
+        group.add(leg);
+
+        [-0.085, 0, 0.085].forEach((spread) => {
+          const toe = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.007, 0.18, 8), legMaterial);
+          toe.position.set(x + spread * 0.25, -0.44, 0.095 + Math.abs(spread) * 0.5);
+          toe.rotation.x = Math.PI / 2 + spread * 1.4;
+          toe.rotation.z = Math.PI / 2;
+          group.add(toe);
+        });
+      });
+
+      group.add(createPerchLabel(sighting.name));
+      group.position.set(
+        spot.x + ((layer % 2) * 0.24 - 0.12),
+        spot.y + 0.18 + layer * 0.32,
+        0.92 + spot.z * 0.28 + layer * 0.08
+      );
+      group.rotation.y = spot.r;
+      group.scale.setScalar(scale);
+      group.userData.floatPhase = index * 0.77;
+      group.userData.baseY = group.position.y;
+      birdsGroup.add(group);
+    }
+
+    function loadSightings() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        return Array.isArray(saved) ? saved.filter((item) => item && item.name).slice(0, 48) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveSightings() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sightings));
+    }
+
+    let sightings = loadSightings();
+
+    function renderBirdList() {
+      birdCount.textContent = `${sightings.length}마리`;
+      birdList.innerHTML = "";
+
+      if (!sightings.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "아직 나무에 올라간 새가 없습니다.";
+        birdList.append(empty);
+        return;
+      }
+
+      sightings.forEach((sighting, index) => {
+        const item = document.createElement("div");
+        item.className = "bird-item";
+
+        const swatch = document.createElement("span");
+        swatch.className = "swatch";
+        swatch.style.backgroundColor = `#${palette[index % palette.length].toString(16).padStart(6, "0")}`;
+
+        const name = document.createElement("span");
+        name.className = "bird-name";
+        const info = birdInfo.get(sighting.name);
+        name.textContent = info ? `${sighting.name} · ${info.habitat}` : sighting.name;
+
+        const remove = document.createElement("button");
+        remove.className = "remove";
+        remove.type = "button";
+        remove.textContent = "x";
+        remove.setAttribute("aria-label", `${sighting.name} 삭제`);
+        remove.addEventListener("click", () => {
+          sightings.splice(index, 1);
+          saveSightings();
+          refreshBirds();
+        });
+
+        item.append(swatch, name, remove);
+        birdList.append(item);
+      });
+    }
+
+    function refreshBirds() {
+      birdsGroup.clear();
+      sightings.forEach(createBird);
+      renderBirdList();
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = input.value.trim().replace(/\s+/g, " ");
+      if (!name) return;
+      const info = birdInfo.get(name);
+      sightings.push({ name, habitat: info?.habitat || "", createdAt: Date.now() });
+      input.value = "";
+      saveSightings();
+      refreshBirds();
+    });
+
+    clearButton.addEventListener("click", () => {
+      sightings = [];
+      saveSightings();
+      refreshBirds();
+      input.focus();
+    });
+
+    function resize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      root.position.x = width < 720 ? 0.25 : 1.65;
+      camera.position.set(width < 720 ? 0 : 0.55, width < 720 ? 3.9 : 3.55, width < 720 ? 12.8 : 10.2);
+      camera.lookAt(root.position.x, 3.15, 0);
+      camera.updateProjectionMatrix();
+    }
+
+    function animate(time) {
+      const seconds = time * 0.001;
+      root.rotation.y = Math.sin(seconds * 0.18) * 0.08;
+      birdsGroup.children.forEach((bird) => {
+        bird.position.y = bird.userData.baseY + Math.sin(seconds * 1.6 + bird.userData.floatPhase) * 0.025;
+      });
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    knownBirds.forEach((bird) => {
+      const option = document.createElement("option");
+      option.value = bird.name;
+      option.label = bird.habitat;
+      birdSuggestions.append(option);
+    });
+
+    createTree();
+    refreshBirds();
+    resize();
+    window.addEventListener("resize", resize);
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
