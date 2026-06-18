@@ -65,6 +65,15 @@
       flex-direction: column;
       gap: 16px;
       max-height: calc(100vh - 32px);
+      transform: translateY(0);
+      transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+      opacity: 1;
+    }
+
+    .panel.closing {
+      transform: translateY(100vh);
+      opacity: 0;
+      pointer-events: none;
     }
 
     h1 {
@@ -517,6 +526,7 @@
       Object.keys(BIRD_MODEL_URLS).filter((key) => key !== "default")
     );
     const canvas = document.querySelector("#scene");
+    const panel = document.querySelector(".panel");
     const form = document.querySelector("#birdForm");
     const input = document.querySelector("#birdInput");
     const birdList = document.querySelector("#birdList");
@@ -638,10 +648,12 @@
       };
     });
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const isMobileDevice = window.innerWidth < 720;
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
+    renderer.setPixelRatio(isMobileDevice ? 1.5 : Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0xd9edf1, 12, 26);
@@ -681,6 +693,8 @@
     let zoomScale = 1;
     let pinchStartDistance = 0;
     let pinchStartZoomScale = 1;
+    let panelSwipeStartY = 0;
+    let isPanelSwiping = false;
     const activePointers = new Map();
 
     const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x7a573e, roughness: 0.88 });
@@ -1416,7 +1430,7 @@
     });
 
     function clampZoomScale(value) {
-      return Math.min(Math.max(value, 0.5), 1.55);
+      return Math.min(Math.max(value, 0.5), 2.2);
     }
 
     function getPointerDistance() {
@@ -1584,6 +1598,48 @@
     });
 
     birdPopupClose.addEventListener("click", hideBirdPopup);
+
+    // Mobile panel swipe-to-dismiss
+    const isMobileSwipe = window.innerWidth < 720;
+    if (isMobileSwipe && panel) {
+      panel.addEventListener("touchstart", (event) => {
+        if (event.touches.length === 1) {
+          panelSwipeStartY = event.touches[0].clientY;
+          isPanelSwiping = true;
+        }
+      });
+
+      panel.addEventListener("touchmove", (event) => {
+        if (!isPanelSwiping) return;
+        const deltaY = event.touches[0].clientY - panelSwipeStartY;
+        if (deltaY > 0) {
+          const progress = Math.min(deltaY / 240, 1);
+          panel.style.transform = `translateY(${deltaY}px)`;
+          panel.style.opacity = 1 - progress * 0.6;
+        }
+      });
+
+      panel.addEventListener("touchend", (event) => {
+        if (!isPanelSwiping) return;
+        isPanelSwiping = false;
+        const deltaY = event.changedTouches[0].clientY - panelSwipeStartY;
+        if (deltaY > 60) {
+          panel.classList.add("closing");
+          setTimeout(() => {
+            panel.style.display = "none";
+          }, 300);
+        } else {
+          panel.style.transform = "translateY(0)";
+          panel.style.opacity = "1";
+        }
+      });
+
+      panel.addEventListener("touchcancel", () => {
+        isPanelSwiping = false;
+        panel.style.transform = "translateY(0)";
+        panel.style.opacity = "1";
+      });
+    }
 
     createUtilityLine();
     setVisitorName(visitorName);
