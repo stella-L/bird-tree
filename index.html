@@ -445,8 +445,13 @@
     const BIRD_MODEL_URLS = {
       default: "./Meshy_AI_Cheerful_Cardinal_Chi_0618043308_texture.glb",
       "까마귀": "./까마귀.glb",
-      "직박구리": "./직박구리.glb"
+      "직박구리": "./직박구리.glb",
+      "곤줄박이": "./곤줄박이.glb",
+      "괭이갈매기": "./괭이갈매기.glb"
     };
+    const MODELED_BIRDS = new Set(
+      Object.keys(BIRD_MODEL_URLS).filter((key) => key !== "default")
+    );
     const canvas = document.querySelector("#scene");
     const form = document.querySelector("#birdForm");
     const input = document.querySelector("#birdInput");
@@ -1450,7 +1455,8 @@
     knownBirds.forEach((bird) => {
       const option = document.createElement("option");
       option.value = bird.name;
-      option.label = bird.habitat;
+      const hasModel = MODELED_BIRDS.has(bird.name);
+      option.label = hasModel ? `🪶 전용 3D 모델 · ${bird.habitat}` : bird.habitat;
       birdSuggestions.append(option);
     });
 
