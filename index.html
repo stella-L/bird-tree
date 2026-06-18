@@ -70,10 +70,25 @@
       opacity: 1;
     }
 
-    .panel.closing {
-      transform: translateY(100vh);
-      opacity: 0;
-      pointer-events: none;
+    .panel.collapsed {
+      transform: translateY(calc(100% - 40px));
+    }
+
+    .sheet-handle {
+      display: none;
+    }
+
+    @media (max-width: 720px) {
+      .sheet-handle {
+        display: block;
+        width: 36px;
+        height: 4px;
+        background: rgba(25, 35, 28, 0.22);
+        border-radius: 2px;
+        margin: 0 auto 4px;
+        flex-shrink: 0;
+        cursor: grab;
+      }
     }
 
     h1 {
@@ -460,6 +475,8 @@
   <canvas id="scene" aria-hidden="true"></canvas>
   <main class="app">
     <section class="panel" aria-label="탐조 기록">
+      <div class="sheet-handle" id="sheetHandle" aria-label="패널 열기/닫기"></div>
+
       <header>
         <h1>전선 위 새들</h1>
         <p class="sub">관찰한 새 이름을 입력하면 전선 위에 한 마리씩 앉습니다.</p>
@@ -1599,46 +1616,58 @@
 
     birdPopupClose.addEventListener("click", hideBirdPopup);
 
-    // Mobile panel swipe-to-dismiss
+    // Mobile bottom sheet swipe
     const isMobileSwipe = window.innerWidth < 720;
-    if (isMobileSwipe && panel) {
-      panel.addEventListener("touchstart", (event) => {
+    const sheetHandle = document.querySelector("#sheetHandle");
+    if (isMobileSwipe && panel && sheetHandle) {
+      let isCollapsed = false;
+
+      function setCollapsed(collapsed, animate = true) {
+        isCollapsed = collapsed;
+        if (!animate) panel.style.transition = "none";
+        panel.classList.toggle("collapsed", collapsed);
+        if (!animate) requestAnimationFrame(() => { panel.style.transition = ""; });
+      }
+
+      sheetHandle.addEventListener("touchstart", (event) => {
         if (event.touches.length === 1) {
           panelSwipeStartY = event.touches[0].clientY;
           isPanelSwiping = true;
+          panel.style.transition = "none";
         }
-      });
+      }, { passive: true });
 
-      panel.addEventListener("touchmove", (event) => {
+      sheetHandle.addEventListener("touchmove", (event) => {
         if (!isPanelSwiping) return;
         const deltaY = event.touches[0].clientY - panelSwipeStartY;
-        if (deltaY > 0) {
-          const progress = Math.min(deltaY / 240, 1);
-          panel.style.transform = `translateY(${deltaY}px)`;
-          panel.style.opacity = 1 - progress * 0.6;
+        const base = isCollapsed ? panel.offsetHeight - 40 : 0;
+        const clampedDelta = Math.max(-base, deltaY);
+        if (clampedDelta !== 0) {
+          panel.style.transform = `translateY(${base + clampedDelta}px)`;
         }
-      });
+      }, { passive: true });
 
-      panel.addEventListener("touchend", (event) => {
+      sheetHandle.addEventListener("touchend", (event) => {
         if (!isPanelSwiping) return;
         isPanelSwiping = false;
+        panel.style.transition = "";
+        panel.style.transform = "";
         const deltaY = event.changedTouches[0].clientY - panelSwipeStartY;
-        if (deltaY > 60) {
-          panel.classList.add("closing");
-          setTimeout(() => {
-            panel.style.display = "none";
-          }, 300);
+        if (!isCollapsed && deltaY > 50) {
+          setCollapsed(true);
+        } else if (isCollapsed && deltaY < -30) {
+          setCollapsed(false);
         } else {
-          panel.style.transform = "translateY(0)";
-          panel.style.opacity = "1";
+          setCollapsed(isCollapsed);
         }
-      });
+      }, { passive: true });
 
-      panel.addEventListener("touchcancel", () => {
+      sheetHandle.addEventListener("touchcancel", () => {
         isPanelSwiping = false;
-        panel.style.transform = "translateY(0)";
-        panel.style.opacity = "1";
-      });
+        panel.style.transition = "";
+        panel.style.transform = "";
+        setCollapsed(isCollapsed);
+      }, { passive: true });
     }
 
     createUtilityLine();
