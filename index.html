@@ -107,7 +107,7 @@
 
     form {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       gap: 8px;
     }
 
@@ -176,6 +176,40 @@
       border: 1px solid rgba(177, 63, 55, 0.35);
     }
 
+    .pick-bird {
+      background: transparent;
+      border: 1px solid rgba(35, 101, 168, 0.35);
+      color: var(--action);
+    }
+
+    .view-reset,
+    .screen-shot,
+    .music-toggle {
+      position: fixed;
+      z-index: 4;
+      right: 18px;
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid rgba(35, 101, 168, 0.3);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--action);
+      box-shadow: 0 10px 28px rgba(25, 35, 28, 0.14);
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
+    }
+
+    .view-reset {
+      top: 18px;
+    }
+
+    .screen-shot {
+      top: 64px;
+    }
+
+    .music-toggle {
+      top: 110px;
+    }
+
     .bird-list {
       overflow: auto;
       display: grid;
@@ -185,7 +219,7 @@
 
     .bird-item {
       display: grid;
-      grid-template-columns: 14px 1fr auto auto;
+      grid-template-columns: 14px 1fr auto auto auto;
       align-items: center;
       gap: 9px;
       padding: 9px 10px;
@@ -193,6 +227,12 @@
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.72);
       font-size: 14px;
+    }
+
+    .bird-item.selected {
+      border-color: rgba(35, 101, 168, 0.72);
+      background: rgba(35, 101, 168, 0.12);
+      box-shadow: inset 3px 0 0 var(--action);
     }
 
     .swatch {
@@ -209,6 +249,7 @@
     }
 
     .face,
+    .direction,
     .remove {
       min-width: 30px;
       min-height: 30px;
@@ -219,7 +260,8 @@
       color: var(--muted);
     }
 
-    .face {
+    .face,
+    .direction {
       padding: 0 8px;
       color: var(--action);
     }
@@ -314,8 +356,48 @@
     }
 
     .bird-popup-owner:empty,
-    .bird-popup-habitat:empty {
+    .bird-popup-habitat:empty,
+    .bird-popup-message:empty {
       display: none;
+    }
+
+    .bird-popup-message {
+      margin: 7px 0 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(35, 101, 168, 0.08);
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .message-form {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .message-form[hidden] {
+      display: none;
+    }
+
+    .message-form textarea {
+      width: 100%;
+      min-height: 62px;
+      resize: none;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      font: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.9);
+      outline: none;
+    }
+
+    .message-form button {
+      justify-self: end;
+      min-height: 34px;
     }
 
     .bird-popup-close {
@@ -367,6 +449,119 @@
       line-height: 1.45;
     }
 
+    .update-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 18px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .update-list li {
+      padding: 7px 10px;
+      border: 1px solid rgba(35, 101, 168, 0.24);
+      border-radius: 999px;
+      background: rgba(35, 101, 168, 0.08);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .bird-picker-dialog {
+      width: min(94vw, 720px);
+      max-height: min(86vh, 720px);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 12px;
+    }
+
+    .bird-picker-search {
+      width: 100%;
+    }
+
+    .bird-picker-grid {
+      min-height: 0;
+      overflow: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+      gap: 8px;
+      padding-right: 2px;
+    }
+
+    .bird-choice {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      align-items: center;
+      gap: 9px;
+      min-height: 64px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      text-align: left;
+    }
+
+    .bird-choice.selected {
+      border-color: rgba(35, 101, 168, 0.72);
+      box-shadow: 0 0 0 3px rgba(35, 101, 168, 0.14);
+    }
+
+    .bird-choice-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: rgba(168, 201, 156, 0.38);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .bird-choice-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      display: block;
+    }
+
+    .bird-choice-name {
+      min-width: 0;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+
+    .bird-choice-meta {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .bird-picker-actions {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bird-picker-selected {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
     .name-form {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -412,7 +607,19 @@
       }
 
       form {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+      }
+
+      .view-reset,
+      .screen-shot {
+        display: none;
+      }
+
+      .music-toggle {
+        top: 10px;
+        right: 10px;
+        min-height: 34px;
+        font-size: 12px;
       }
 
       input {
@@ -435,7 +642,7 @@
       }
 
       .bird-item {
-        grid-template-columns: 10px minmax(0, 1fr) auto auto;
+        grid-template-columns: 10px minmax(0, 1fr) auto auto auto;
         gap: 6px;
         padding: 7px 8px;
         font-size: 12px;
@@ -447,6 +654,7 @@
       }
 
       .face,
+      .direction,
       .remove {
         min-width: 28px;
         min-height: 28px;
@@ -459,6 +667,32 @@
 
       .status {
         min-height: 14px;
+      }
+
+      .modal {
+        align-items: end;
+        padding: 10px;
+      }
+
+      .bird-picker-dialog {
+        width: 100%;
+        max-height: min(86svh, 680px);
+        padding: 16px;
+      }
+
+      .bird-picker-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .bird-choice {
+        grid-template-columns: 42px 1fr;
+        min-height: 58px;
+        padding: 7px;
+      }
+
+      .bird-choice-thumb {
+        width: 42px;
+        height: 42px;
       }
     }
   </style>
@@ -473,6 +707,10 @@
 </head>
 <body>
   <canvas id="scene" aria-hidden="true"></canvas>
+  <audio id="backgroundMusic" src="./전선 위 새들.wav" preload="auto"></audio>
+  <button class="view-reset" id="resetView" type="button">원래대로</button>
+  <button class="screen-shot" id="captureScene" type="button">찰칵</button>
+  <button class="music-toggle" id="musicToggle" type="button">노래 끄기</button>
   <main class="app">
     <section class="panel" aria-label="탐조 기록">
       <div class="sheet-handle" id="sheetHandle" aria-label="패널 열기/닫기"></div>
@@ -490,6 +728,7 @@
       <form id="birdForm">
         <input id="birdInput" name="bird" type="text" maxlength="36" autocomplete="off" list="birdSuggestions" placeholder="예: 박새, 물총새, 직박구리" aria-label="관찰한 새 이름">
         <datalist id="birdSuggestions"></datalist>
+        <button class="pick-bird" id="chooseBird" type="button">선택</button>
         <button type="submit">올리기</button>
       </form>
 
@@ -510,6 +749,11 @@
     <h3 id="birdPopupName"></h3>
     <p class="bird-popup-habitat" id="birdPopupHabitat"></p>
     <p class="bird-popup-owner" id="birdPopupOwner"></p>
+    <p class="bird-popup-message" id="birdPopupMessage"></p>
+    <form class="message-form" id="messageForm" hidden>
+      <textarea id="messageInput" maxlength="80" placeholder="말풍선 남기기" aria-label="말풍선"></textarea>
+      <button type="submit">저장</button>
+    </form>
   </div>
 
   <div class="modal" id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameTitle" hidden>
@@ -523,13 +767,47 @@
     </div>
   </div>
 
+  <div class="modal" id="modelUpdateModal" role="dialog" aria-modal="true" aria-labelledby="modelUpdateTitle" hidden>
+    <div class="dialog">
+      <h2 id="modelUpdateTitle">새 모델 업데이트</h2>
+      <p id="modelUpdateSummary">전용 3D 모델이 추가됐습니다.</p>
+      <ul class="update-list" id="modelUpdateList"></ul>
+      <div class="dialog-actions">
+        <button id="modelUpdateClose" type="button">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="birdPickerModal" role="dialog" aria-modal="true" aria-labelledby="birdPickerTitle" hidden>
+    <div class="dialog bird-picker-dialog">
+      <div>
+        <h2 id="birdPickerTitle">새 선택</h2>
+        <p>새 얼굴을 보고 선택한 뒤 적용합니다.</p>
+      </div>
+      <input class="bird-picker-search" id="birdPickerSearch" type="search" autocomplete="off" placeholder="새 이름 검색" aria-label="새 이름 검색">
+      <div class="bird-picker-grid" id="birdPickerGrid"></div>
+      <div class="bird-picker-actions">
+        <div class="bird-picker-selected" id="birdPickerSelected">선택된 새 없음</div>
+        <button class="clear" id="birdPickerClose" type="button">닫기</button>
+        <button id="birdPickerApply" type="button" disabled>적용</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import * as THREE from "three";
     import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
     const STORAGE_KEY = "bird-tree-sightings";
     const VISITOR_KEY = "bird-tree-visitor-name";
+    const MODEL_NOTICE_KEY = "bird-tree-seen-modeled-birds";
+    const MUSIC_KEY = "bird-tree-music-enabled";
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGmMQrl3Yw1xcO-ViwkXutZ22aomOCZ4W-iCZEfxHBGyRcEIFGqkLAKsCsjqeulXbGSA/exec";
+    const MIN_ZOOM_SCALE = 0.28;
+    const MAX_ZOOM_SCALE = 2.4;
+    const DEFAULT_FACE_TURN = 0.75;
+    const MUSIC_VOLUME = 0.42;
+    const MUSIC_FADE_SECONDS = 3;
     const BIRD_MODEL_URLS = {
       default: "./Meshy_AI_Cheerful_Cardinal_Chi_0618043308_texture.glb",
       "까마귀": "./까마귀.glb",
@@ -537,15 +815,56 @@
       "곤줄박이": "./곤줄박이.glb",
       "괭이갈매기": "./괭이갈매기.glb",
       "검은등할미새": "./검은등할미새.glb",
-      "깝작도요": "./깝작도요.glb"
+      "깝작도요": "./깝작도요.glb",
+      "동고비": ["./동고비1.glb", "./동고비2.glb"],
+      "때까치": "./떼까치.glb",
+      "멧비둘기": "./멧비둘기.glb",
+      "물닭": "./물닭.glb",
+      "물총새": "./물총새.glb",
+      "민물가마우지": "./민물가마우지.glb",
+      "바다직박구리": "./바다직박구리.glb",
+      "박새": "./박새.glb",
+      "방울새": "./방울새.glb"
+    };
+    const BIRD_IMAGE_URLS = {
+      "검은등할미새": "./검은등할미새.png",
+      "곤줄박이": "./곤줄박이.png",
+      "괭이갈매기": "./괭이갈매기.png",
+      "까마귀": "./까마귀.png",
+      "까치": "./까치.png",
+      "깝작도요": "./깝작도요.png",
+      "노랑턱멧새": "./노랑턱멧새.png",
+      "동고비": "./동고비.png",
+      "딱새": "./딱새.png",
+      "때까치": "./떼까치.png",
+      "멧비둘기": "./멧비둘기.png",
+      "물닭": "./물닭.png",
+      "물총새": "./물총새.png",
+      "민물가마우지": "./민물가마우지.png",
+      "바다직박구리": "./바다직박구리.png",
+      "박새": "./박새.png",
+      "방울새": "./방울새.png"
     };
     const MODELED_BIRDS = new Set(
       Object.keys(BIRD_MODEL_URLS).filter((key) => key !== "default")
+    );
+    const PREVIOUS_MODELED_BIRDS = [
+      "까마귀",
+      "직박구리",
+      "곤줄박이",
+      "괭이갈매기",
+      "검은등할미새",
+      "깝작도요"
+    ];
+    const PREVIOUS_MODELED_BIRD_SET = new Set(PREVIOUS_MODELED_BIRDS);
+    const NEW_MODELED_BIRDS = new Set(
+      [...MODELED_BIRDS].filter((name) => !PREVIOUS_MODELED_BIRD_SET.has(name))
     );
     const canvas = document.querySelector("#scene");
     const panel = document.querySelector(".panel");
     const form = document.querySelector("#birdForm");
     const input = document.querySelector("#birdInput");
+    const chooseBird = document.querySelector("#chooseBird");
     const birdList = document.querySelector("#birdList");
     const birdCount = document.querySelector("#birdCount");
     const reloadButton = document.querySelector("#reloadBirds");
@@ -562,6 +881,23 @@
     const birdPopupHabitat = document.querySelector("#birdPopupHabitat");
     const birdPopupOwner = document.querySelector("#birdPopupOwner");
     const birdPopupClose = document.querySelector("#birdPopupClose");
+    const birdPopupMessage = document.querySelector("#birdPopupMessage");
+    const messageForm = document.querySelector("#messageForm");
+    const messageInput = document.querySelector("#messageInput");
+    const modelUpdateModal = document.querySelector("#modelUpdateModal");
+    const modelUpdateSummary = document.querySelector("#modelUpdateSummary");
+    const modelUpdateList = document.querySelector("#modelUpdateList");
+    const modelUpdateClose = document.querySelector("#modelUpdateClose");
+    const resetView = document.querySelector("#resetView");
+    const birdPickerModal = document.querySelector("#birdPickerModal");
+    const birdPickerSearch = document.querySelector("#birdPickerSearch");
+    const birdPickerGrid = document.querySelector("#birdPickerGrid");
+    const birdPickerSelected = document.querySelector("#birdPickerSelected");
+    const birdPickerClose = document.querySelector("#birdPickerClose");
+    const birdPickerApply = document.querySelector("#birdPickerApply");
+    const captureScene = document.querySelector("#captureScene");
+    const backgroundMusic = document.querySelector("#backgroundMusic");
+    const musicToggle = document.querySelector("#musicToggle");
 
     const knownBirds = [
       { name: "검은등할미새", habitat: "강, 연못, 물가" },
@@ -641,7 +977,7 @@
       "황조롱이": { body: 0xb56c39, head: 0x83909a, wing: 0x8b4b2c, belly: 0xd8b07d, cheek: 0xe4d0ad, tail: 0x7f5b42, beak: 0x34322d }
     };
 
-    const wireBaseHeights = [4.78, 4.18, 3.58, 2.98];
+    const wireBaseHeights = [5.25, 4.05, 2.85, 1.65];
     const wireDepths = [-1.08, -0.36, 0.36, 1.08];
     const wireSags = [0.1, 0.14, 0.18, 0.22];
 
@@ -666,7 +1002,13 @@
     });
 
     const isMobileDevice = window.innerWidth < 720;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+      powerPreference: "low-power",
+      preserveDrawingBuffer: true
+    });
     renderer.setPixelRatio(isMobileDevice ? 1.5 : Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -699,6 +1041,9 @@
     root.add(birdsGroup);
 
     const birdModelTemplates = new Map();
+    const petalDummy = new THREE.Object3D();
+    const cherryPetals = [];
+    let cherryPetalMesh = null;
     let birdModelLoadStarted = false;
     let treeRotationY = 0;
     let treeRotationX = 0;
@@ -712,17 +1057,61 @@
     let pinchStartZoomScale = 1;
     let panelSwipeStartY = 0;
     let isPanelSwiping = false;
+    let focusedBirdGroup = null;
+    let selectedPickerBirdName = "";
+    let selectedSightingKey = "";
+    let activePopupSighting = null;
+    let musicEnabled = localStorage.getItem(MUSIC_KEY) !== "off";
+    let musicFadeTimer = 0;
+    let musicIsFadingOut = false;
     const activePointers = new Map();
+    const cameraTarget = new THREE.Vector3();
 
     const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x7a573e, roughness: 0.88 });
     const crossarmMaterial = new THREE.MeshStandardMaterial({ color: 0x6a4b35, roughness: 0.86 });
     const wireMaterial = new THREE.MeshStandardMaterial({ color: 0x1e2528, roughness: 0.56, metalness: 0.18 });
     const insulatorMaterial = new THREE.MeshStandardMaterial({ color: 0xd8e6e9, roughness: 0.34 });
     const metalMaterial = new THREE.MeshStandardMaterial({ color: 0x677277, roughness: 0.48, metalness: 0.5 });
+    const treeTrunkMaterial = new THREE.MeshStandardMaterial({ color: 0x6f4b2d, roughness: 0.9 });
+    const treeLeafMaterials = [
+      new THREE.MeshStandardMaterial({ color: 0x3f7a45, roughness: 0.92 }),
+      new THREE.MeshStandardMaterial({ color: 0x5f8f47, roughness: 0.92 }),
+      new THREE.MeshStandardMaterial({ color: 0x2f6840, roughness: 0.92 })
+    ];
+
+    function createGrassTexture() {
+      const textureCanvas = document.createElement("canvas");
+      textureCanvas.width = 256;
+      textureCanvas.height = 256;
+      const context = textureCanvas.getContext("2d");
+      context.fillStyle = "#a8c99c";
+      context.fillRect(0, 0, 256, 256);
+
+      for (let index = 0; index < 1300; index += 1) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const length = 3 + Math.random() * 8;
+        const hue = 92 + Math.random() * 28;
+        const light = 33 + Math.random() * 28;
+        context.strokeStyle = `hsla(${hue}, 38%, ${light}%, 0.34)`;
+        context.lineWidth = 0.7 + Math.random() * 1.2;
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(x + Math.random() * 3 - 1.5, y - length);
+        context.stroke();
+      }
+
+      const texture = new THREE.CanvasTexture(textureCanvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(9, 9);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
 
     const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(8.5, 96),
-      new THREE.MeshStandardMaterial({ color: 0xa8c99c, roughness: 0.95 })
+      new THREE.CircleGeometry(13.2, 160),
+      new THREE.MeshStandardMaterial({ map: createGrassTexture(), color: 0xc5dfab, roughness: 0.98 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.04;
@@ -785,19 +1174,19 @@
       poleXs.forEach((x) => {
         const pole = makeCylinderBetween(
           new THREE.Vector3(x, 0, 0),
-          new THREE.Vector3(x, 5.05, 0),
+          new THREE.Vector3(x, 6.02, 0),
           0.19,
           poleMaterial
         );
         root.add(pole);
 
         const cap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 14), poleMaterial);
-        cap.position.set(x, 5.15, 0);
+        cap.position.set(x, 6.12, 0);
         cap.scale.set(1, 0.55, 1);
         cap.castShadow = true;
         root.add(cap);
 
-        [4.78, 3.58].forEach((y) => {
+        [wireBaseHeights[0], wireBaseHeights[2]].forEach((y) => {
           const crossarm = makeCylinderBetween(
             new THREE.Vector3(x, y, -1.42),
             new THREE.Vector3(x, y, 1.42),
@@ -807,28 +1196,25 @@
           root.add(crossarm);
         });
 
-        [
-          [4.78, -1.08], [4.18, -0.36], [3.58, 0.36], [2.98, 1.08]
-        ].forEach(([y, z]) => createInsulator(x, y, z));
+        wireBaseHeights.forEach((y, index) => createInsulator(x, y, wireDepths[index]));
 
         const braceA = makeCylinderBetween(
-          new THREE.Vector3(x, 3.02, -1.2),
-          new THREE.Vector3(x, 4.64, -0.3),
+          new THREE.Vector3(x, 2.32, -1.2),
+          new THREE.Vector3(x, 5.08, -0.3),
           0.026,
           metalMaterial
         );
         const braceB = makeCylinderBetween(
-          new THREE.Vector3(x, 3.02, 1.2),
-          new THREE.Vector3(x, 4.64, 0.3),
+          new THREE.Vector3(x, 2.32, 1.2),
+          new THREE.Vector3(x, 5.08, 0.3),
           0.026,
           metalMaterial
         );
         root.add(braceA, braceB);
       });
 
-      [
-        [4.78, -1.08], [4.18, -0.36], [3.58, 0.36], [2.98, 1.08]
-      ].forEach(([y, z], index) => {
+      wireBaseHeights.forEach((y, index) => {
+        const z = wireDepths[index];
         makeCable(new THREE.Vector3(-4.75, y, z), new THREE.Vector3(4.75, y, z), 0.12 + index * 0.035);
       });
 
@@ -849,6 +1235,147 @@
       shadow.rotation.x = -Math.PI / 2;
       shadow.position.set(0, 0.01, 0.25);
       root.add(shadow);
+    }
+
+    function createTreeAt(x, z, index) {
+      const tree = new THREE.Group();
+      const heightJitter = 0.58 + (Math.sin(index * 8.13) + 1) * 0.34;
+      const trunkHeight = 1.05 + heightJitter;
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.15, trunkHeight, 10),
+        treeTrunkMaterial
+      );
+      trunk.position.y = trunkHeight / 2;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      tree.add(trunk);
+
+      const leafBaseY = trunkHeight + 0.35;
+      [
+        [0, 0.02, 0, 0.78],
+        [-0.32, -0.16, 0.08, 0.56],
+        [0.3, -0.1, -0.05, 0.54],
+        [0.04, 0.34, -0.02, 0.48]
+      ].forEach(([lx, ly, lz, radius], leafIndex) => {
+        const leaves = new THREE.Mesh(
+          new THREE.SphereGeometry(radius, 18, 12),
+          treeLeafMaterials[(index + leafIndex) % treeLeafMaterials.length]
+        );
+        leaves.position.set(lx, leafBaseY + ly, lz);
+        leaves.scale.set(1, 0.82, 1);
+        leaves.castShadow = true;
+        leaves.receiveShadow = true;
+        tree.add(leaves);
+      });
+
+      tree.position.set(x, 0, z);
+      tree.rotation.y = index * 0.61;
+      tree.scale.setScalar(0.62 + (Math.sin(index * 4.71) + 1) * 0.24);
+      root.add(tree);
+    }
+
+    function createTreeRing() {
+      const rings = [
+        { radius: 8.9, count: 24, offset: 0.08 },
+        { radius: 10.1, count: 32, offset: 0.0 },
+        { radius: 11.4, count: 40, offset: 0.04 }
+      ];
+      let treeIndex = 0;
+      rings.forEach((ring) => {
+        for (let index = 0; index < ring.count; index += 1) {
+          const angle = ((index / ring.count) + ring.offset) * Math.PI * 2;
+          const radius = ring.radius + Math.sin((treeIndex + 1) * 3.17) * 0.36;
+          createTreeAt(Math.cos(angle) * radius, Math.sin(angle) * radius, treeIndex);
+          treeIndex += 1;
+        }
+      });
+    }
+
+    function createGrassField() {
+      const bladeGeometry = new THREE.ConeGeometry(0.014, 0.085, 5);
+      bladeGeometry.translate(0, 0.0425, 0);
+      const bladeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x5f9a45,
+        roughness: 0.95,
+        metalness: 0
+      });
+      const bladeCount = 2200;
+      const grass = new THREE.InstancedMesh(bladeGeometry, bladeMaterial, bladeCount);
+      const dummy = new THREE.Object3D();
+
+      for (let index = 0; index < bladeCount; index += 1) {
+        const angle = index * 2.399963 + Math.sin(index * 1.91) * 0.16;
+        const radius = Math.sqrt((index + 0.5) / bladeCount) * 12.4;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const height = 0.48 + (Math.sin(index * 7.21) + 1) * 0.22;
+        dummy.position.set(x, 0.008, z);
+        dummy.rotation.set(
+          Math.sin(index * 5.19) * 0.18,
+          angle,
+          Math.sin(index * 4.83) * 0.18
+        );
+        dummy.scale.set(0.8, height, 0.8);
+        dummy.updateMatrix();
+        grass.setMatrixAt(index, dummy.matrix);
+      }
+      grass.castShadow = false;
+      grass.receiveShadow = true;
+      root.add(grass);
+    }
+
+    function createCherryBlossomPetals() {
+      const petalCount = 360;
+      const petalGeometry = new THREE.PlaneGeometry(0.09, 0.048);
+      const petalMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffbdd0,
+        transparent: true,
+        opacity: 0.78,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      cherryPetalMesh = new THREE.InstancedMesh(petalGeometry, petalMaterial, petalCount);
+      cherryPetalMesh.frustumCulled = false;
+
+      for (let index = 0; index < petalCount; index += 1) {
+        cherryPetals.push({
+          x: Math.sin(index * 12.17) * 8.8,
+          y: 2.2 + ((index * 0.47) % 6.2),
+          z: -5.4 + ((index * 1.73) % 10.8),
+          speed: 0.14 + (Math.sin(index * 2.31) + 1) * 0.12,
+          sway: 0.2 + (Math.sin(index * 5.77) + 1) * 0.26,
+          phase: index * 0.67,
+          scale: 0.38 + (Math.sin(index * 3.91) + 1) * 0.46 + (Math.sin(index * 9.37) + 1) * 0.12
+        });
+      }
+
+      scene.add(cherryPetalMesh);
+    }
+
+    function updateCherryBlossomPetals(seconds) {
+      if (!cherryPetalMesh) return;
+      cherryPetals.forEach((petal, index) => {
+        petal.y -= petal.speed * 0.016;
+        if (petal.y < -0.2) {
+          petal.y = 8.4 + Math.sin(index * 4.29) * 0.35;
+          petal.x = Math.sin((seconds + index) * 2.13) * 9.2;
+          petal.z = -5.4 + (((seconds * 1.7 + index * 1.73) % 10.8) + 10.8) % 10.8;
+          petal.scale = 0.38 + (Math.sin((seconds + index) * 3.91) + 1) * 0.46;
+        }
+
+        const swayX = Math.sin(seconds * 0.75 + petal.phase) * petal.sway;
+        const swayZ = Math.cos(seconds * 0.52 + petal.phase) * petal.sway * 0.45;
+        petalDummy.position.set(petal.x + swayX, petal.y, petal.z + swayZ);
+        petalDummy.rotation.set(
+          seconds * 0.7 + petal.phase,
+          seconds * 1.1 + petal.phase,
+          Math.sin(seconds + petal.phase)
+        );
+        petalDummy.scale.setScalar(petal.scale);
+        petalDummy.updateMatrix();
+        cherryPetalMesh.setMatrixAt(index, petalDummy.matrix);
+      });
+      cherryPetalMesh.instanceMatrix.needsUpdate = true;
     }
 
     function createPerchLabel(name, visitorName) {
@@ -881,6 +1408,47 @@
       return sprite;
     }
 
+    function createSpeechBubble(message) {
+      const text = String(message || "").trim();
+      if (!text) return null;
+
+      const textureCanvas = document.createElement("canvas");
+      const context = textureCanvas.getContext("2d");
+      const width = 260;
+      const height = 86;
+      textureCanvas.width = width;
+      textureCanvas.height = height;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "rgba(255, 239, 156, 0.96)";
+      context.strokeStyle = "rgba(190, 136, 42, 0.28)";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.ellipse(72, 42, 48, 25, 0, 0, Math.PI * 2);
+      context.ellipse(118, 32, 45, 28, 0, 0, Math.PI * 2);
+      context.ellipse(166, 40, 52, 27, 0, 0, Math.PI * 2);
+      context.ellipse(118, 54, 72, 22, 0, 0, Math.PI * 2);
+      context.ellipse(184, 56, 44, 21, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.beginPath();
+      context.moveTo(width / 2 - 12, height - 18);
+      context.lineTo(width / 2 + 8, height - 18);
+      context.lineTo(width / 2 - 2, height - 5);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.fillStyle = "#19231c";
+      fitText(context, text, width - 42, 18);
+      context.fillText(text, width / 2, 39);
+
+      const texture = new THREE.CanvasTexture(textureCanvas);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+      sprite.scale.set(1.02, 0.34, 1);
+      sprite.position.y = 1.48;
+      return sprite;
+    }
+
     function createBirdModelTemplate(sourceModel) {
       const model = sourceModel.clone(true);
       const box = new THREE.Box3().setFromObject(model);
@@ -910,15 +1478,25 @@
       return normalized;
     }
 
-    function getBirdModelTemplate(name) {
-      return birdModelTemplates.get(name) || birdModelTemplates.get("default") || null;
+    function pickTemplateVariant(templates, sighting, index) {
+      if (!Array.isArray(templates)) return templates || null;
+      if (!templates.length) return null;
+      const seed = `${sighting?.savedAt || ""}|${sighting?.createdAt || ""}|${sighting?.visitorName || ""}|${sighting?.name || ""}|${index}`;
+      return templates[hashString(seed) % templates.length];
+    }
+
+    function getBirdModelTemplate(name, sighting, index) {
+      return pickTemplateVariant(birdModelTemplates.get(name), sighting, index)
+        || pickTemplateVariant(birdModelTemplates.get("default"), sighting, index);
     }
 
     function loadBirdModels() {
       if (birdModelLoadStarted) return;
       birdModelLoadStarted = true;
       const loader = new GLTFLoader();
-      const entries = Object.entries(BIRD_MODEL_URLS);
+      const entries = Object.entries(BIRD_MODEL_URLS).flatMap(([name, urls]) =>
+        (Array.isArray(urls) ? urls : [urls]).map((url) => [name, url])
+      );
       let loadedCount = 0;
       let failedCount = 0;
 
@@ -927,7 +1505,15 @@
         loader.load(
           url,
           (gltf) => {
-            birdModelTemplates.set(name, createBirdModelTemplate(gltf.scene));
+            const template = createBirdModelTemplate(gltf.scene);
+            const urls = BIRD_MODEL_URLS[name];
+            if (Array.isArray(urls)) {
+              const templates = birdModelTemplates.get(name) || [];
+              templates.push(template);
+              birdModelTemplates.set(name, templates);
+            } else {
+              birdModelTemplates.set(name, template);
+            }
             loadedCount += 1;
             refreshBirds();
             syncStatus.textContent = `${loadedCount}개 새 모델을 적용했습니다.`;
@@ -978,8 +1564,7 @@
     function getFaceTurn(sighting, index) {
       const savedTurn = Number(sighting.faceTurn);
       if (Number.isFinite(savedTurn)) return Math.min(Math.max(savedTurn, 0), 1);
-      const seed = `${sighting.savedAt || ""}|${sighting.createdAt || ""}|${sighting.visitorName || ""}|${sighting.name || ""}|${index}`;
-      return hashString(seed) / 4294967295;
+      return DEFAULT_FACE_TURN;
     }
 
     function getBirdRotationY(sighting, index, spot) {
@@ -1005,11 +1590,13 @@
       const scale = 0.78;
       const mat = (color, roughness = 0.66) => new THREE.MeshStandardMaterial({ color, roughness });
 
-      const birdModelTemplate = getBirdModelTemplate(sighting.name);
+      const birdModelTemplate = getBirdModelTemplate(sighting.name, sighting, index);
       if (birdModelTemplate) {
         const model = birdModelTemplate.clone(true);
+        const speechBubble = createSpeechBubble(sighting.message);
         group.add(model);
         group.add(createPerchLabel(sighting.name, sighting.visitorName));
+        if (speechBubble) group.add(speechBubble);
         group.position.set(
           spot.x + ((layer % 2) * 0.42 - 0.21),
           spot.y + layer * 0.28,
@@ -1180,9 +1767,11 @@
       });
 
       group.add(createPerchLabel(sighting.name, sighting.visitorName));
+      const speechBubble = createSpeechBubble(sighting.message);
+      if (speechBubble) group.add(speechBubble);
       group.position.set(
         spot.x + ((layer % 2) * 0.42 - 0.21),
-        spot.y + 0.58 + layer * 0.28,
+        spot.y + 0.4 + layer * 0.28,
         spot.z + layer * 0.16
       );
       group.rotation.y = getBirdRotationY(sighting, index, spot);
@@ -1207,12 +1796,61 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sightings));
     }
 
+    function getSightingKey(sighting) {
+      return [
+        sighting?.savedAt || "",
+        sighting?.createdAt || "",
+        sighting?.visitorName || "",
+        sighting?.name || ""
+      ].join("|");
+    }
+
+    function getSeenModeledBirds() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(MODEL_NOTICE_KEY) || "null");
+        return Array.isArray(saved) ? saved.filter(Boolean) : PREVIOUS_MODELED_BIRDS;
+      } catch {
+        return PREVIOUS_MODELED_BIRDS;
+      }
+    }
+
+    function saveSeenModeledBirds(names) {
+      localStorage.setItem(MODEL_NOTICE_KEY, JSON.stringify(names));
+    }
+
+    function showModelUpdateNotice() {
+      const currentModeledBirds = [...MODELED_BIRDS].sort((a, b) => a.localeCompare(b, "ko"));
+      const seenModeledBirds = new Set(getSeenModeledBirds());
+      const updatedBirds = currentModeledBirds.filter((name) => !seenModeledBirds.has(name));
+
+      if (!updatedBirds.length) {
+        saveSeenModeledBirds(currentModeledBirds);
+        return;
+      }
+
+      modelUpdateList.innerHTML = "";
+      modelUpdateSummary.textContent = `전용 3D 모델 새 ${updatedBirds.length}종이 업데이트됐습니다.`;
+      updatedBirds.forEach((name) => {
+        const item = document.createElement("li");
+        item.textContent = name;
+        modelUpdateList.append(item);
+      });
+      modelUpdateModal.hidden = false;
+    }
+
+    function closeModelUpdateNotice() {
+      const currentModeledBirds = [...MODELED_BIRDS].sort((a, b) => a.localeCompare(b, "ko"));
+      saveSeenModeledBirds(currentModeledBirds);
+      modelUpdateModal.hidden = true;
+    }
+
     function normalizeSighting(item) {
       if (!item || !item.name) return null;
       return {
         visitorName: item.visitorName || "",
         name: String(item.name).trim().replace(/\s+/g, " "),
         habitat: item.habitat || birdInfo.get(item.name)?.habitat || "",
+        message: String(item.message || "").trim().slice(0, 80),
         createdAt: Number(item.createdAt) || Date.now(),
         savedAt: item.savedAt || "",
         faceTurn: Number.isFinite(Number(item.faceTurn)) ? Number(item.faceTurn) : undefined
@@ -1296,6 +1934,30 @@
       }
     }
 
+    async function sendMessageToSheet(sighting) {
+      if (!APPS_SCRIPT_URL) return;
+
+      syncStatus.textContent = "말풍선을 저장 중...";
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "updateMessage",
+            savedAt: sighting.savedAt,
+            createdAt: sighting.createdAt,
+            ownerName: sighting.visitorName,
+            birdLabel: sighting.name,
+            message: sighting.message
+          })
+        });
+        syncStatus.textContent = "말풍선 저장 요청을 보냈습니다.";
+      } catch {
+        syncStatus.textContent = "말풍선 저장에 실패했습니다.";
+      }
+    }
+
     function loadSightingsFromSheet() {
       if (!APPS_SCRIPT_URL) return;
 
@@ -1357,6 +2019,13 @@
       sightings.forEach((sighting, index) => {
         const item = document.createElement("div");
         item.className = "bird-item";
+        item.classList.toggle("selected", getSightingKey(sighting) === selectedSightingKey);
+        item.addEventListener("click", (event) => {
+          if (event.target.closest("button")) return;
+          const birdGroup = birdsGroup.children[index];
+          showBirdPopup(sighting);
+          if (birdGroup) focusBirdGroup(birdGroup);
+        });
 
         const swatch = document.createElement("span");
         swatch.className = "swatch";
@@ -1366,13 +2035,27 @@
         name.className = "bird-name";
         name.textContent = sighting.name;
 
-        const face = document.createElement("button");
-        face.className = "face";
-        face.type = "button";
-        face.textContent = "얼굴";
-        face.setAttribute("aria-label", `${sighting.name} 얼굴 방향 바꾸기`);
-        face.addEventListener("click", () => {
-          sightings[index].faceTurn = Math.random();
+        const front = document.createElement("button");
+        front.className = "direction";
+        front.type = "button";
+        front.textContent = "앞";
+        front.setAttribute("aria-label", `${sighting.name} 앞으로 보기`);
+        front.addEventListener("click", (event) => {
+          event.stopPropagation();
+          sightings[index].faceTurn = 0.25;
+          saveSightings();
+          refreshBirds();
+          sendFaceTurnToSheet(sightings[index]);
+        });
+
+        const back = document.createElement("button");
+        back.className = "direction";
+        back.type = "button";
+        back.textContent = "뒤";
+        back.setAttribute("aria-label", `${sighting.name} 뒤로 보기`);
+        back.addEventListener("click", (event) => {
+          event.stopPropagation();
+          sightings[index].faceTurn = 0.75;
           saveSightings();
           refreshBirds();
           sendFaceTurnToSheet(sightings[index]);
@@ -1383,22 +2066,25 @@
         remove.type = "button";
         remove.textContent = "x";
         remove.setAttribute("aria-label", `${sighting.name} 삭제`);
-        remove.addEventListener("click", () => {
+        remove.addEventListener("click", (event) => {
+          event.stopPropagation();
           sightings.splice(index, 1);
           saveSightings();
           refreshBirds();
         });
 
-        item.append(swatch, name, face, remove);
+        item.append(swatch, name, front, back, remove);
         birdList.append(item);
       });
     }
 
     function refreshBirds() {
+      focusedBirdGroup = null;
       birdsGroup.clear();
       sightings.forEach(createBird);
       renderBirdList();
       if (birdPopup) birdPopup.hidden = true;
+      resize();
     }
 
     form.addEventListener("submit", (event) => {
@@ -1414,9 +2100,10 @@
         visitorName,
         name,
         habitat: info?.habitat || "",
+        message: "",
         createdAt: Date.now(),
         savedAt: new Date().toISOString(),
-        faceTurn: Math.random()
+        faceTurn: DEFAULT_FACE_TURN
       };
       sightings.push(sighting);
       input.value = "";
@@ -1447,7 +2134,128 @@
     });
 
     function clampZoomScale(value) {
-      return Math.min(Math.max(value, 0.5), 2.2);
+      return Math.min(Math.max(value, MIN_ZOOM_SCALE), MAX_ZOOM_SCALE);
+    }
+
+    function isDesktopView() {
+      return window.innerWidth >= 720;
+    }
+
+    function focusBirdGroup(birdGroup) {
+      if (!isDesktopView()) return;
+      focusedBirdGroup = birdGroup;
+      zoomScale = Math.min(zoomScale, 0.42);
+      resize();
+    }
+
+    function resetCameraView() {
+      focusedBirdGroup = null;
+      zoomScale = 1;
+      treeRotationX = 0;
+      treeRotationY = 0;
+      resize();
+    }
+
+    function captureSceneImage() {
+      if (!isDesktopView()) return;
+      updateCameraPosition();
+      renderer.render(scene, camera);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        link.href = url;
+        link.download = `bird-tree-${timestamp}.png`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    }
+
+    function updateMusicButton() {
+      musicToggle.textContent = musicEnabled ? "노래 끄기" : "노래 켜기";
+    }
+
+    function stopMusicFade() {
+      if (musicFadeTimer) {
+        window.clearInterval(musicFadeTimer);
+        musicFadeTimer = 0;
+      }
+    }
+
+    function fadeMusicTo(targetVolume, durationSeconds, onComplete) {
+      stopMusicFade();
+      const startVolume = backgroundMusic.volume;
+      const startTime = performance.now();
+      const duration = Math.max(durationSeconds, 0.1) * 1000;
+
+      musicFadeTimer = window.setInterval(() => {
+        const progress = Math.min((performance.now() - startTime) / duration, 1);
+        backgroundMusic.volume = startVolume + (targetVolume - startVolume) * progress;
+        if (progress >= 1) {
+          stopMusicFade();
+          if (onComplete) onComplete();
+        }
+      }, 50);
+    }
+
+    function fadeInMusic() {
+      musicIsFadingOut = false;
+      backgroundMusic.volume = 0;
+      fadeMusicTo(MUSIC_VOLUME, MUSIC_FADE_SECONDS);
+    }
+
+    function restartMusicWithFade() {
+      if (!musicEnabled) return;
+      musicIsFadingOut = false;
+      backgroundMusic.currentTime = 0;
+      backgroundMusic.play().then(fadeInMusic).catch(updateMusicButton);
+    }
+
+    function handleMusicTimeUpdate() {
+      if (!musicEnabled || musicIsFadingOut || !Number.isFinite(backgroundMusic.duration)) return;
+      const fadeSeconds = Math.min(MUSIC_FADE_SECONDS, Math.max(backgroundMusic.duration / 3, 0.8));
+      const remaining = backgroundMusic.duration - backgroundMusic.currentTime;
+      if (remaining <= fadeSeconds) {
+        musicIsFadingOut = true;
+        fadeMusicTo(0, Math.max(remaining, 0.3), restartMusicWithFade);
+      }
+    }
+
+    async function playBackgroundMusic() {
+      if (!musicEnabled) {
+        stopMusicFade();
+        backgroundMusic.pause();
+        updateMusicButton();
+        return;
+      }
+
+      try {
+        backgroundMusic.volume = 0;
+        await backgroundMusic.play();
+        fadeInMusic();
+      } catch {
+        // Browsers can block autoplay until the first user gesture.
+      }
+      updateMusicButton();
+    }
+
+    function toggleBackgroundMusic() {
+      musicEnabled = backgroundMusic.paused;
+      localStorage.setItem(MUSIC_KEY, musicEnabled ? "on" : "off");
+      if (musicEnabled) {
+        playBackgroundMusic();
+      } else {
+        stopMusicFade();
+        backgroundMusic.pause();
+        backgroundMusic.volume = 0;
+        musicIsFadingOut = false;
+        updateMusicButton();
+      }
+    }
+
+    function retryMusicAfterGesture() {
+      if (musicEnabled && backgroundMusic.paused) playBackgroundMusic();
     }
 
     function getPointerDistance() {
@@ -1523,23 +2331,40 @@
 
     canvas.addEventListener("wheel", (event) => {
       event.preventDefault();
-      zoomScale = clampZoomScale(zoomScale * (event.deltaY > 0 ? 1.08 : 0.92));
+      zoomScale = clampZoomScale(zoomScale * (event.deltaY > 0 ? 1.12 : 0.86));
       resize();
     }, { passive: false });
 
-    function resize() {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      renderer.setSize(width, height, false);
-      camera.aspect = width / height;
-      const isMobile = width < 720;
+    function updateCameraPosition() {
+      const isMobile = window.innerWidth < 720;
       scenePivot.position.x = isMobile ? 0 : 1.45;
+
+      if (focusedBirdGroup && focusedBirdGroup.parent && isDesktopView()) {
+        focusedBirdGroup.getWorldPosition(cameraTarget);
+        cameraTarget.y += 0.46;
+        camera.position.set(
+          cameraTarget.x + 0.35,
+          cameraTarget.y + 1.2 * Math.sqrt(zoomScale),
+          cameraTarget.z + 5.2 * zoomScale
+        );
+        camera.lookAt(cameraTarget);
+        return;
+      }
+
       camera.position.set(
         isMobile ? 0 : 0.45,
         (isMobile ? 4.0 : 3.52) * Math.sqrt(zoomScale),
         (isMobile ? 15.2 : 11.2) * zoomScale
       );
       camera.lookAt(scenePivot.position.x, isMobile ? 3.85 : 3.6, 0);
+    }
+
+    function resize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      updateCameraPosition();
       camera.updateProjectionMatrix();
     }
 
@@ -1551,17 +2376,101 @@
       birdsGroup.children.forEach((bird) => {
         bird.position.y = bird.userData.baseY + Math.sin(seconds * 1.6 + bird.userData.floatPhase) * 0.025;
       });
+      updateCherryBlossomPetals(seconds);
+      updateCameraPosition();
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
 
-    knownBirds.forEach((bird) => {
+    const suggestedBirds = [...knownBirds].sort((a, b) => {
+      const modeledDiff = Number(MODELED_BIRDS.has(b.name)) - Number(MODELED_BIRDS.has(a.name));
+      return modeledDiff || a.name.localeCompare(b.name, "ko");
+    });
+
+    suggestedBirds.forEach((bird) => {
       const option = document.createElement("option");
       option.value = bird.name;
       const hasModel = MODELED_BIRDS.has(bird.name);
-      option.label = hasModel ? `🪶 전용 3D 모델 · ${bird.habitat}` : bird.habitat;
+      const newLabel = NEW_MODELED_BIRDS.has(bird.name) ? "new · " : "";
+      option.label = hasModel ? `${newLabel}🪶 전용 3D 모델 · ${bird.habitat}` : bird.habitat;
       birdSuggestions.append(option);
     });
+
+    function selectPickerBird(name) {
+      selectedPickerBirdName = name;
+      birdPickerSelected.textContent = name ? `${name} 선택됨` : "선택된 새 없음";
+      birdPickerApply.disabled = !name;
+      birdPickerGrid.querySelectorAll(".bird-choice").forEach((button) => {
+        button.classList.toggle("selected", button.dataset.name === name);
+      });
+    }
+
+    function createBirdChoice(bird) {
+      const button = document.createElement("button");
+      button.className = "bird-choice";
+      button.type = "button";
+      button.dataset.name = bird.name;
+
+      const thumb = document.createElement("span");
+      thumb.className = "bird-choice-thumb";
+      const imageUrl = BIRD_IMAGE_URLS[bird.name];
+      if (imageUrl) {
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = "";
+        image.loading = "lazy";
+        image.onerror = () => {
+          image.remove();
+          thumb.textContent = bird.name.slice(0, 1);
+        };
+        thumb.append(image);
+      } else {
+        thumb.textContent = bird.name.slice(0, 1);
+      }
+
+      const text = document.createElement("span");
+      const name = document.createElement("span");
+      name.className = "bird-choice-name";
+      name.textContent = bird.name;
+      const meta = document.createElement("span");
+      meta.className = "bird-choice-meta";
+      meta.textContent = MODELED_BIRDS.has(bird.name)
+        ? `${NEW_MODELED_BIRDS.has(bird.name) ? "new · " : ""}전용 3D`
+        : "";
+      text.append(name, meta);
+
+      button.append(thumb, text);
+      button.addEventListener("click", () => selectPickerBird(bird.name));
+      return button;
+    }
+
+    function renderBirdPicker(filter = "") {
+      const keyword = filter.trim().replace(/\s+/g, " ");
+      birdPickerGrid.innerHTML = "";
+      suggestedBirds
+        .filter((bird) => !keyword || bird.name.includes(keyword) || bird.habitat.includes(keyword))
+        .forEach((bird) => birdPickerGrid.append(createBirdChoice(bird)));
+      selectPickerBird(selectedPickerBirdName);
+    }
+
+    function openBirdPicker() {
+      selectedPickerBirdName = input.value.trim();
+      birdPickerSearch.value = "";
+      renderBirdPicker();
+      birdPickerModal.hidden = false;
+      setTimeout(() => birdPickerSearch.focus(), 0);
+    }
+
+    function closeBirdPicker() {
+      birdPickerModal.hidden = true;
+    }
+
+    function applyBirdPickerSelection() {
+      if (!selectedPickerBirdName) return;
+      input.value = selectedPickerBirdName;
+      closeBirdPicker();
+      input.focus();
+    }
 
     const raycaster = new THREE.Raycaster();
     const pointerNdc = new THREE.Vector2();
@@ -1577,15 +2486,37 @@
     }
 
     function showBirdPopup(sighting) {
+      activePopupSighting = sighting;
+      selectedSightingKey = getSightingKey(sighting);
+      renderBirdList();
       const info = birdInfo.get(sighting.name);
+      const isOwner = visitorName && sighting.visitorName === visitorName;
       birdPopupName.textContent = sighting.name;
       birdPopupHabitat.textContent = info ? `서식지 · ${info.habitat}` : "";
       birdPopupOwner.textContent = sighting.visitorName ? `기록자 · ${sighting.visitorName}` : "";
+      birdPopupMessage.textContent = sighting.message || "";
+      messageInput.value = sighting.message || "";
+      messageForm.hidden = !isOwner;
       birdPopup.hidden = false;
     }
 
     function hideBirdPopup() {
       birdPopup.hidden = true;
+      activePopupSighting = null;
+    }
+
+    function saveActiveMessage(event) {
+      event.preventDefault();
+      if (!activePopupSighting) return;
+      const key = getSightingKey(activePopupSighting);
+      const target = sightings.find((sighting) => getSightingKey(sighting) === key);
+      if (!target || target.visitorName !== visitorName) return;
+      target.message = messageInput.value.trim().replace(/\s+/g, " ").slice(0, 80);
+      activePopupSighting = target;
+      selectedSightingKey = key;
+      saveSightings();
+      refreshBirds();
+      sendMessageToSheet(target);
     }
 
     canvas.addEventListener("pointerdown", (event) => {
@@ -1608,6 +2539,7 @@
         const birdGroup = findBirdGroup(hit.object);
         if (birdGroup) {
           showBirdPopup(birdGroup.userData.sighting);
+          focusBirdGroup(birdGroup);
           return;
         }
       }
@@ -1615,6 +2547,21 @@
     });
 
     birdPopupClose.addEventListener("click", hideBirdPopup);
+    modelUpdateClose.addEventListener("click", closeModelUpdateNotice);
+    messageForm.addEventListener("submit", saveActiveMessage);
+    resetView.addEventListener("click", resetCameraView);
+    captureScene.addEventListener("click", captureSceneImage);
+    musicToggle.addEventListener("click", toggleBackgroundMusic);
+    backgroundMusic.addEventListener("timeupdate", handleMusicTimeUpdate);
+    backgroundMusic.addEventListener("ended", restartMusicWithFade);
+    document.addEventListener("pointerdown", retryMusicAfterGesture, { once: true });
+    chooseBird.addEventListener("click", openBirdPicker);
+    birdPickerClose.addEventListener("click", closeBirdPicker);
+    birdPickerApply.addEventListener("click", applyBirdPickerSelection);
+    birdPickerSearch.addEventListener("input", () => renderBirdPicker(birdPickerSearch.value));
+    birdPickerModal.addEventListener("click", (event) => {
+      if (event.target === birdPickerModal) closeBirdPicker();
+    });
 
     // Mobile bottom sheet swipe
     const isMobileSwipe = window.innerWidth < 720;
@@ -1671,12 +2618,17 @@
     }
 
     createUtilityLine();
+    createTreeRing();
+    createGrassField();
+    createCherryBlossomPetals();
     setVisitorName(visitorName);
     if (!visitorName) requestVisitorName();
+    showModelUpdateNotice();
     refreshBirds();
     loadBirdModel();
     loadSightingsFromSheet();
     resize();
+    playBackgroundMusic();
     window.addEventListener("resize", resize);
     requestAnimationFrame(animate);
   </script>

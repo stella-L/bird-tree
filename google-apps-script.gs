@@ -7,11 +7,16 @@ function doPost(e) {
   const visitorName = String(payload.visitorName || '').trim();
   const birdName = String(payload.name || payload.birdName || '').trim();
   const habitat = String(payload.habitat || '').trim();
+  const message = String(payload.message || '').trim();
   const createdAt = payload.createdAt || '';
   const faceTurn = Number(payload.faceTurn);
 
   if (payload.action === 'updateFaceTurn') {
     return updateFaceTurn(sheet, payload, faceTurn);
+  }
+
+  if (payload.action === 'updateMessage') {
+    return updateMessage(sheet, payload, message);
   }
 
   if (!visitorName || !birdName) {
@@ -24,7 +29,8 @@ function doPost(e) {
     birdName,
     habitat,
     createdAt,
-    Number.isFinite(faceTurn) ? faceTurn : ''
+    Number.isFinite(faceTurn) ? faceTurn : '',
+    message
   ]);
   return json({ ok: true });
 }
@@ -58,6 +64,31 @@ function updateFaceTurn(sheet, payload, faceTurn) {
   return json({ ok: true, updated: false });
 }
 
+function updateMessage(sheet, payload, message) {
+  ensureHeaders(sheet);
+
+  const targetSavedAt = String(payload.savedAt || '');
+  const targetCreatedAt = String(payload.createdAt || '');
+  const targetOwnerName = String(payload.ownerName || '');
+  const targetBirdLabel = String(payload.birdLabel || '');
+  const values = sheet.getDataRange().getValues();
+
+  for (let index = 1; index < values.length; index += 1) {
+    const row = values[index];
+    const savedAtMatches = targetSavedAt && String(row[0]) === targetSavedAt;
+    const createdAtMatches = targetCreatedAt && String(row[4]) === targetCreatedAt;
+    const ownerMatches = !targetOwnerName || String(row[1]) === targetOwnerName;
+    const birdMatches = !targetBirdLabel || String(row[2]) === targetBirdLabel;
+
+    if ((savedAtMatches || createdAtMatches) && ownerMatches && birdMatches) {
+      sheet.getRange(index + 1, 7).setValue(message);
+      return json({ ok: true, updated: true });
+    }
+  }
+
+  return json({ ok: true, updated: false });
+}
+
 function doGet(e) {
   const callback = e && e.parameter && e.parameter.callback;
   const rows = getSheet()
@@ -71,7 +102,8 @@ function doGet(e) {
       name: row[2],
       habitat: row[3],
       createdAt: row[4],
-      faceTurn: row[5]
+      faceTurn: row[5],
+      message: row[6]
     }));
 
   if (callback) {
@@ -97,7 +129,7 @@ function getSheet() {
 }
 
 function ensureHeaders(sheet) {
-  const headers = ['savedAt', 'visitorName', 'birdName', 'habitat', 'createdAt', 'faceTurn'];
+  const headers = ['savedAt', 'visitorName', 'birdName', 'habitat', 'createdAt', 'faceTurn', 'message'];
 
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
