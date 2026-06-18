@@ -113,9 +113,14 @@
       filter: brightness(0.95);
     }
 
+    button:disabled {
+      cursor: wait;
+      opacity: 0.62;
+    }
+
     .toolbar {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
       align-items: center;
       gap: 10px;
       padding-top: 4px;
@@ -127,10 +132,16 @@
       font-size: 14px;
     }
 
-    .clear {
+    .clear,
+    .reload {
       min-height: 34px;
       padding: 0 10px;
       background: transparent;
+      border: 1px solid rgba(35, 101, 168, 0.35);
+      color: var(--action);
+    }
+
+    .clear {
       color: var(--danger);
       border: 1px solid rgba(177, 63, 55, 0.35);
     }
@@ -298,6 +309,14 @@
       }
     }
   </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
   <canvas id="scene" aria-hidden="true"></canvas>
@@ -321,6 +340,7 @@
 
       <div class="toolbar">
         <div class="count" id="birdCount">0마리</div>
+        <button class="reload" id="reloadBirds" type="button">불러오기</button>
         <button class="clear" id="clearBirds" type="button">비우기</button>
       </div>
 
@@ -342,16 +362,19 @@
   </div>
 
   <script type="module">
-    import * as THREE from "https://unpkg.com/three@0.165.0/build/three.module.js";
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
     const STORAGE_KEY = "bird-tree-sightings";
     const VISITOR_KEY = "bird-tree-visitor-name";
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGmMQrl3Yw1xcO-ViwkXutZ22aomOCZ4W-iCZEfxHBGyRcEIFGqkLAKsCsjqeulXbGSA/exec";
+    const BIRD_MODEL_URL = "./Meshy_AI_Cheerful_Cardinal_Chi_0618043308_texture.glb";
     const canvas = document.querySelector("#scene");
     const form = document.querySelector("#birdForm");
     const input = document.querySelector("#birdInput");
     const birdList = document.querySelector("#birdList");
     const birdCount = document.querySelector("#birdCount");
+    const reloadButton = document.querySelector("#reloadBirds");
     const clearButton = document.querySelector("#clearBirds");
     const birdSuggestions = document.querySelector("#birdSuggestions");
     const nameModal = document.querySelector("#nameModal");
@@ -480,6 +503,9 @@
     const birdsGroup = new THREE.Group();
     root.add(birdsGroup);
 
+    let birdModelTemplate = null;
+    let birdModelLoadStarted = false;
+
     const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x7a5237, roughness: 0.88 });
     const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x6f442e, roughness: 0.9 });
     const leafMaterials = [0x3c8a53, 0x559b55, 0x7aa342].map((color) => (
@@ -586,6 +612,55 @@
       return sprite;
     }
 
+    function createBirdModelTemplate(sourceModel) {
+      const model = sourceModel.clone(true);
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      const scaleGroup = new THREE.Group();
+      const normalized = new THREE.Group();
+      const maxDimension = Math.max(size.x, size.y, size.z) || 1;
+      const modelScale = 1.12 / maxDimension;
+
+      model.position.set(-center.x, -box.min.y, -center.z);
+      model.rotation.y = Math.PI;
+      model.traverse((node) => {
+        if (!node.isMesh) return;
+        node.castShadow = true;
+        node.receiveShadow = true;
+        if (node.material) node.material = node.material.clone();
+      });
+
+      scaleGroup.scale.setScalar(modelScale);
+      scaleGroup.add(model);
+      normalized.add(scaleGroup);
+      normalized.position.y = -0.46;
+      return normalized;
+    }
+
+    function loadBirdModel() {
+      if (birdModelLoadStarted) return;
+      birdModelLoadStarted = true;
+      const loader = new GLTFLoader();
+
+      syncStatus.textContent = "새 모델을 불러오는 중...";
+      loader.load(
+        BIRD_MODEL_URL,
+        (gltf) => {
+          birdModelTemplate = createBirdModelTemplate(gltf.scene);
+          refreshBirds();
+          syncStatus.textContent = "새 모델을 적용했습니다.";
+        },
+        undefined,
+        () => {
+          syncStatus.textContent = "새 모델을 불러오지 못해 기본 새로 표시합니다.";
+        }
+      );
+    }
+
     function roundRect(context, x, y, width, height, radius) {
       context.beginPath();
       context.moveTo(x + radius, y);
@@ -622,6 +697,23 @@
       const group = new THREE.Group();
       const scale = 0.78 + (index % 5) * 0.035;
       const mat = (color, roughness = 0.66) => new THREE.MeshStandardMaterial({ color, roughness });
+
+      if (birdModelTemplate) {
+        const model = birdModelTemplate.clone(true);
+        group.add(model);
+        group.add(createPerchLabel(sighting.name, sighting.visitorName));
+        group.position.set(
+          spot.x + ((layer % 2) * 0.24 - 0.12),
+          spot.y + 0.2 + layer * 0.32,
+          0.92 + spot.z * 0.28 + layer * 0.08
+        );
+        group.rotation.y = -Math.PI / 2 + spot.r * 0.35;
+        group.scale.setScalar(scale * 1.05);
+        group.userData.floatPhase = index * 0.77;
+        group.userData.baseY = group.position.y;
+        birdsGroup.add(group);
+        return;
+      }
 
       const body = new THREE.Mesh(
         new THREE.SphereGeometry(0.34, 32, 22),
@@ -803,6 +895,33 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sightings));
     }
 
+    function normalizeSighting(item) {
+      if (!item || !item.name) return null;
+      return {
+        visitorName: item.visitorName || "",
+        name: String(item.name).trim().replace(/\s+/g, " "),
+        habitat: item.habitat || birdInfo.get(item.name)?.habitat || "",
+        createdAt: Number(item.createdAt) || Date.now(),
+        savedAt: item.savedAt || ""
+      };
+    }
+
+    function mergeSightings(nextSightings) {
+      const merged = new Map();
+      [...sightings, ...nextSightings].forEach((item) => {
+        const sighting = normalizeSighting(item);
+        if (!sighting) return;
+        const key = [
+          sighting.savedAt,
+          sighting.createdAt,
+          sighting.visitorName,
+          sighting.name
+        ].join("|");
+        merged.set(key, sighting);
+      });
+      sightings = [...merged.values()].slice(-48);
+    }
+
     let sightings = loadSightings();
     let visitorName = localStorage.getItem(VISITOR_KEY) || "";
 
@@ -834,7 +953,7 @@
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(sighting)
         });
-        syncStatus.textContent = "Google Sheets 저장 요청 완료";
+        syncStatus.textContent = "Google Sheets에 저장 요청을 보냈습니다.";
       } catch {
         syncStatus.textContent = "Google Sheets 저장에 실패했습니다.";
       }
@@ -846,27 +965,22 @@
       const callbackName = `loadBirdTree_${Date.now()}`;
       const script = document.createElement("script");
       const separator = APPS_SCRIPT_URL.includes("?") ? "&" : "?";
+      let timeoutId = 0;
 
       syncStatus.textContent = "Google Sheets 기록을 불러오는 중...";
+      reloadButton.disabled = true;
       window[callbackName] = (rows) => {
         delete window[callbackName];
+        clearTimeout(timeoutId);
         script.remove();
+        reloadButton.disabled = false;
 
         if (!Array.isArray(rows)) {
           syncStatus.textContent = "Google Sheets 기록을 불러오지 못했습니다.";
           return;
         }
 
-        sightings = rows
-          .filter((item) => item && item.name)
-          .map((item) => ({
-            visitorName: item.visitorName || "",
-            name: item.name,
-            habitat: item.habitat || birdInfo.get(item.name)?.habitat || "",
-            createdAt: Number(item.createdAt) || Date.now(),
-            savedAt: item.savedAt || ""
-          }))
-          .slice(-48);
+        mergeSightings(rows);
         saveSightings();
         refreshBirds();
         syncStatus.textContent = sightings.length ? "Google Sheets 기록을 불러왔습니다." : "";
@@ -874,9 +988,18 @@
 
       script.onerror = () => {
         delete window[callbackName];
+        clearTimeout(timeoutId);
         script.remove();
+        reloadButton.disabled = false;
         syncStatus.textContent = "Google Sheets 기록을 불러오지 못했습니다.";
       };
+
+      timeoutId = window.setTimeout(() => {
+        delete window[callbackName];
+        script.remove();
+        reloadButton.disabled = false;
+        syncStatus.textContent = "Google Sheets 응답이 지연되고 있습니다.";
+      }, 9000);
 
       script.src = `${APPS_SCRIPT_URL}${separator}callback=${encodeURIComponent(callbackName)}`;
       document.body.append(script);
@@ -962,7 +1085,12 @@
 
     changeVisitor.addEventListener("click", requestVisitorName);
 
+    reloadButton.addEventListener("click", loadSightingsFromSheet);
+
     clearButton.addEventListener("click", () => {
+      if (sightings.length && !window.confirm("이 브라우저의 새 목록을 비울까요? Google Sheets 기록은 삭제되지 않습니다.")) {
+        return;
+      }
       sightings = [];
       saveSightings();
       refreshBirds();
@@ -1001,6 +1129,7 @@
     setVisitorName(visitorName);
     if (!visitorName) requestVisitorName();
     refreshBirds();
+    loadBirdModel();
     loadSightingsFromSheet();
     resize();
     window.addEventListener("resize", resize);
