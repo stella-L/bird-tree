@@ -251,6 +251,61 @@
       font-size: 12px;
     }
 
+    .bird-popup {
+      position: fixed;
+      z-index: 6;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      width: min(92vw, 320px);
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 16px 44px rgba(25, 35, 28, 0.26);
+      pointer-events: auto;
+    }
+
+    .bird-popup[hidden] {
+      display: none;
+    }
+
+    .bird-popup h3 {
+      margin: 0 24px 6px 0;
+      font-size: 17px;
+      color: var(--ink, #20271f);
+    }
+
+    .bird-popup-habitat {
+      margin: 0 0 4px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #4a544a;
+    }
+
+    .bird-popup-owner {
+      margin: 0;
+      font-size: 12px;
+      color: #7a857a;
+    }
+
+    .bird-popup-owner:empty,
+    .bird-popup-habitat:empty {
+      display: none;
+    }
+
+    .bird-popup-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      border: none;
+      background: none;
+      font-size: 20px;
+      line-height: 1;
+      color: #8a948a;
+      cursor: pointer;
+    }
+
     .modal {
       position: fixed;
       inset: 0;
@@ -424,6 +479,13 @@
     </section>
   </main>
 
+  <div class="bird-popup" id="birdPopup" hidden>
+    <button class="bird-popup-close" id="birdPopupClose" type="button" aria-label="닫기">×</button>
+    <h3 id="birdPopupName"></h3>
+    <p class="bird-popup-habitat" id="birdPopupHabitat"></p>
+    <p class="bird-popup-owner" id="birdPopupOwner"></p>
+  </div>
+
   <div class="modal" id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameTitle" hidden>
     <div class="dialog">
       <h2 id="nameTitle">이름 입력</h2>
@@ -447,7 +509,9 @@
       "까마귀": "./까마귀.glb",
       "직박구리": "./직박구리.glb",
       "곤줄박이": "./곤줄박이.glb",
-      "괭이갈매기": "./괭이갈매기.glb"
+      "괭이갈매기": "./괭이갈매기.glb",
+      "검은등할미새": "./검은등할미새.glb",
+      "깝작도요": "./깝작도요.glb"
     };
     const MODELED_BIRDS = new Set(
       Object.keys(BIRD_MODEL_URLS).filter((key) => key !== "default")
@@ -466,6 +530,11 @@
     const visitorNameLabel = document.querySelector("#visitorNameLabel");
     const changeVisitor = document.querySelector("#changeVisitor");
     const syncStatus = document.querySelector("#syncStatus");
+    const birdPopup = document.querySelector("#birdPopup");
+    const birdPopupName = document.querySelector("#birdPopupName");
+    const birdPopupHabitat = document.querySelector("#birdPopupHabitat");
+    const birdPopupOwner = document.querySelector("#birdPopupOwner");
+    const birdPopupClose = document.querySelector("#birdPopupClose");
 
     const knownBirds = [
       { name: "검은등할미새", habitat: "강, 연못, 물가" },
@@ -919,6 +988,8 @@
         group.scale.setScalar(scale * 1.08);
         group.userData.floatPhase = index * 0.77;
         group.userData.baseY = group.position.y;
+        group.userData.isBird = true;
+        group.userData.sighting = sighting;
         birdsGroup.add(group);
         return;
       }
@@ -1087,6 +1158,8 @@
       group.scale.setScalar(scale * 1.12);
       group.userData.floatPhase = index * 0.77;
       group.userData.baseY = group.position.y;
+      group.userData.isBird = true;
+      group.userData.sighting = sighting;
       birdsGroup.add(group);
     }
 
@@ -1260,9 +1333,7 @@
 
         const name = document.createElement("span");
         name.className = "bird-name";
-        const info = birdInfo.get(sighting.name);
-        const owner = sighting.visitorName ? ` · ${sighting.visitorName}` : "";
-        name.textContent = info ? `${sighting.name}${owner} · ${info.habitat}` : `${sighting.name}${owner}`;
+        name.textContent = sighting.name;
 
         const face = document.createElement("button");
         face.className = "face";
@@ -1296,6 +1367,7 @@
       birdsGroup.clear();
       sightings.forEach(createBird);
       renderBirdList();
+      if (birdPopup) birdPopup.hidden = true;
     }
 
     form.addEventListener("submit", (event) => {
@@ -1459,6 +1531,59 @@
       option.label = hasModel ? `🪶 전용 3D 모델 · ${bird.habitat}` : bird.habitat;
       birdSuggestions.append(option);
     });
+
+    const raycaster = new THREE.Raycaster();
+    const pointerNdc = new THREE.Vector2();
+    let pointerDownPos = null;
+
+    function findBirdGroup(object) {
+      let node = object;
+      while (node) {
+        if (node.userData && node.userData.isBird) return node;
+        node = node.parent;
+      }
+      return null;
+    }
+
+    function showBirdPopup(sighting) {
+      const info = birdInfo.get(sighting.name);
+      birdPopupName.textContent = sighting.name;
+      birdPopupHabitat.textContent = info ? `서식지 · ${info.habitat}` : "";
+      birdPopupOwner.textContent = sighting.visitorName ? `기록자 · ${sighting.visitorName}` : "";
+      birdPopup.hidden = false;
+    }
+
+    function hideBirdPopup() {
+      birdPopup.hidden = true;
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      pointerDownPos = { x: event.clientX, y: event.clientY };
+    });
+
+    canvas.addEventListener("pointerup", (event) => {
+      if (!pointerDownPos) return;
+      const moved = Math.hypot(event.clientX - pointerDownPos.x, event.clientY - pointerDownPos.y);
+      pointerDownPos = null;
+      if (moved > 8) return;
+
+      const rect = canvas.getBoundingClientRect();
+      pointerNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointerNdc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointerNdc, camera);
+
+      const hits = raycaster.intersectObjects(birdsGroup.children, true);
+      for (const hit of hits) {
+        const birdGroup = findBirdGroup(hit.object);
+        if (birdGroup) {
+          showBirdPopup(birdGroup.userData.sighting);
+          return;
+        }
+      }
+      hideBirdPopup();
+    });
+
+    birdPopupClose.addEventListener("click", hideBirdPopup);
 
     createUtilityLine();
     setVisitorName(visitorName);
