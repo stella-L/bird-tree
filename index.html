@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>탐조 나무</title>
+  <title>전선 위 새들</title>
   <style>
     :root {
       color-scheme: light;
@@ -11,7 +11,6 @@
       --muted: #5b665e;
       --panel: rgba(255, 255, 255, 0.88);
       --line: rgba(25, 35, 28, 0.15);
-      --leaf: #2d6d48;
       --action: #2365a8;
       --danger: #b13f37;
     }
@@ -26,7 +25,7 @@
       overflow: hidden;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--ink);
-      background: #d9edf1;
+      background: #dfeff5;
     }
 
     #scene {
@@ -35,6 +34,13 @@
       display: block;
       width: 100vw;
       height: 100vh;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    #scene:active {
+      cursor: grabbing;
     }
 
     .app {
@@ -155,7 +161,7 @@
 
     .bird-item {
       display: grid;
-      grid-template-columns: 14px 1fr auto;
+      grid-template-columns: 14px 1fr auto auto;
       align-items: center;
       gap: 9px;
       padding: 9px 10px;
@@ -178,6 +184,7 @@
       font-weight: 650;
     }
 
+    .face,
     .remove {
       min-width: 30px;
       min-height: 30px;
@@ -186,6 +193,11 @@
       border: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.65);
       color: var(--muted);
+    }
+
+    .face {
+      padding: 0 8px;
+      color: var(--action);
     }
 
     .empty {
@@ -291,21 +303,83 @@
 
     @media (max-width: 720px) {
       body {
-        overflow: auto;
+        overflow: hidden;
       }
 
       .app {
         grid-template-columns: 1fr;
-        align-items: start;
+        align-items: end;
       }
 
       .panel {
-        margin: 10px;
-        max-height: min(52vh, 430px);
+        align-self: end;
+        margin: 8px;
+        padding: 12px;
+        gap: 10px;
+        max-height: min(46svh, 390px);
+        border-radius: 8px;
       }
 
       h1 {
-        font-size: 22px;
+        font-size: 20px;
+      }
+
+      .sub {
+        display: none;
+      }
+
+      .visitor {
+        padding: 8px 10px;
+      }
+
+      form {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      input {
+        padding: 10px;
+        font-size: 16px;
+      }
+
+      button {
+        min-height: 40px;
+        padding: 0 10px;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr auto auto;
+        gap: 6px;
+      }
+
+      .bird-list {
+        max-height: 116px;
+      }
+
+      .bird-item {
+        grid-template-columns: 10px minmax(0, 1fr) auto auto;
+        gap: 6px;
+        padding: 7px 8px;
+        font-size: 12px;
+      }
+
+      .swatch {
+        width: 10px;
+        height: 10px;
+      }
+
+      .face,
+      .remove {
+        min-width: 28px;
+        min-height: 28px;
+        font-size: 11px;
+      }
+
+      .source {
+        display: none;
+      }
+
+      .status {
+        min-height: 14px;
       }
     }
   </style>
@@ -323,8 +397,8 @@
   <main class="app">
     <section class="panel" aria-label="탐조 기록">
       <header>
-        <h1>탐조 나무</h1>
-        <p class="sub">관찰한 새 이름을 입력하면 나뭇가지 위에 한 마리씩 올라갑니다.</p>
+        <h1>전선 위 새들</h1>
+        <p class="sub">관찰한 새 이름을 입력하면 전선 위에 한 마리씩 앉습니다.</p>
       </header>
 
       <div class="visitor">
@@ -368,7 +442,11 @@
     const STORAGE_KEY = "bird-tree-sightings";
     const VISITOR_KEY = "bird-tree-visitor-name";
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzGmMQrl3Yw1xcO-ViwkXutZ22aomOCZ4W-iCZEfxHBGyRcEIFGqkLAKsCsjqeulXbGSA/exec";
-    const BIRD_MODEL_URL = "./Meshy_AI_Cheerful_Cardinal_Chi_0618043308_texture.glb";
+    const BIRD_MODEL_URLS = {
+      default: "./Meshy_AI_Cheerful_Cardinal_Chi_0618043308_texture.glb",
+      "까마귀": "./까마귀.glb",
+      "직박구리": "./직박구리.glb"
+    };
     const canvas = document.querySelector("#scene");
     const form = document.querySelector("#birdForm");
     const input = document.querySelector("#birdInput");
@@ -462,20 +540,29 @@
       "황조롱이": { body: 0xb56c39, head: 0x83909a, wing: 0x8b4b2c, belly: 0xd8b07d, cheek: 0xe4d0ad, tail: 0x7f5b42, beak: 0x34322d }
     };
 
-    const branchSpots = [
-      { x: -1.65, y: 2.6, z: 0.2, r: -0.24 },
-      { x: 2.65, y: 2.75, z: 0.12, r: 0.34 },
-      { x: -1.0, y: 3.42, z: 0.02, r: -0.12 },
-      { x: 1.75, y: 3.68, z: -0.04, r: 0.18 },
-      { x: -1.85, y: 4.05, z: -0.12, r: -0.2 },
-      { x: 3.25, y: 3.28, z: -0.14, r: 0.28 },
-      { x: -1.0, y: 4.25, z: 0.06, r: -0.08 },
-      { x: 0.92, y: 4.36, z: 0.06, r: 0.08 },
-      { x: -1.62, y: 4.72, z: -0.14, r: -0.14 },
-      { x: 2.35, y: 4.18, z: -0.18, r: 0.22 },
-      { x: -0.22, y: 5.02, z: 0.02, r: -0.04 },
-      { x: 1.42, y: 5.04, z: -0.08, r: 0.12 }
-    ];
+    const wireBaseHeights = [4.78, 4.18, 3.58, 2.98];
+    const wireDepths = [-1.08, -0.36, 0.36, 1.08];
+    const wireSags = [0.1, 0.14, 0.18, 0.22];
+
+    function getWireY(wire, x) {
+      const normalizedX = Math.min(Math.abs(x) / 4.75, 1);
+      return wireBaseHeights[wire] - wireSags[wire] * (1 - normalizedX * normalizedX);
+    }
+
+    const wireSpots = Array.from({ length: 28 }, (_, index) => {
+      const wire = Math.floor(index / 7);
+      const slot = index % 7;
+      const xOrder = [0, -1, 1, -2, 2, -3, 3];
+      const x = xOrder[slot] * 1.06;
+      const y = getWireY(wire, x);
+      const z = wireDepths[wire];
+      return {
+        x,
+        y,
+        z,
+        r: slot % 2 === 0 ? 0 : Math.PI
+      };
+    });
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -497,20 +584,36 @@
     sun.shadow.mapSize.set(2048, 2048);
     scene.add(sun);
 
+    const scenePivot = new THREE.Group();
+    scenePivot.position.y = 3.6;
+    scene.add(scenePivot);
+
     const root = new THREE.Group();
-    scene.add(root);
+    root.position.y = -3.6;
+    scenePivot.add(root);
 
     const birdsGroup = new THREE.Group();
     root.add(birdsGroup);
 
-    let birdModelTemplate = null;
+    const birdModelTemplates = new Map();
     let birdModelLoadStarted = false;
+    let treeRotationY = 0;
+    let treeRotationX = 0;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartRotationY = 0;
+    let dragStartRotationX = 0;
+    let isDraggingTree = false;
+    let zoomScale = 1;
+    let pinchStartDistance = 0;
+    let pinchStartZoomScale = 1;
+    const activePointers = new Map();
 
-    const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x7a5237, roughness: 0.88 });
-    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x6f442e, roughness: 0.9 });
-    const leafMaterials = [0x3c8a53, 0x559b55, 0x7aa342].map((color) => (
-      new THREE.MeshStandardMaterial({ color, roughness: 0.78 })
-    ));
+    const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x7a573e, roughness: 0.88 });
+    const crossarmMaterial = new THREE.MeshStandardMaterial({ color: 0x6a4b35, roughness: 0.86 });
+    const wireMaterial = new THREE.MeshStandardMaterial({ color: 0x1e2528, roughness: 0.56, metalness: 0.18 });
+    const insulatorMaterial = new THREE.MeshStandardMaterial({ color: 0xd8e6e9, roughness: 0.34 });
+    const metalMaterial = new THREE.MeshStandardMaterial({ color: 0x677277, roughness: 0.48, metalness: 0.5 });
 
     const ground = new THREE.Mesh(
       new THREE.CircleGeometry(8.5, 96),
@@ -541,74 +644,135 @@
       return mesh;
     }
 
-    function createTree() {
-      const trunk = makeCylinderBetween(
-        new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0, 4.5, 0),
-        0.42,
-        trunkMaterial
+    function makeCable(start, end, sag = 0.18) {
+      const curve = new THREE.CatmullRomCurve3([
+        start,
+        new THREE.Vector3((start.x + end.x) / 2, (start.y + end.y) / 2 - sag, (start.z + end.z) / 2),
+        end
+      ]);
+      const cable = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, 48, 0.018, 8, false),
+        wireMaterial
       );
-      root.add(trunk);
+      cable.castShadow = true;
+      cable.receiveShadow = true;
+      root.add(cable);
+    }
 
-      const branches = [
-        [[0, 1.9, 0], [-3.25, 2.62, 0.08], 0.16],
-        [[0, 2.15, 0], [3.05, 2.82, 0.05], 0.15],
-        [[0, 2.88, 0], [-2.38, 3.58, -0.12], 0.13],
-        [[0, 3.02, 0], [2.22, 3.78, -0.1], 0.12],
-        [[0, 3.55, 0], [-1.22, 4.42, 0.04], 0.11],
-        [[0, 3.72, 0], [1.34, 4.52, 0.02], 0.1],
-        [[0, 4.1, 0], [-0.34, 5.18, 0], 0.09]
-      ];
+    function createInsulator(x, y, z) {
+      const holder = new THREE.Group();
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.28, 10), metalMaterial);
+      stem.rotation.x = Math.PI / 2;
+      stem.position.set(x, y, z);
+      stem.castShadow = true;
+      holder.add(stem);
 
-      branches.forEach(([a, b, radius]) => {
-        root.add(makeCylinderBetween(new THREE.Vector3(...a), new THREE.Vector3(...b), radius, branchMaterial));
-      });
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 12), insulatorMaterial);
+      cap.scale.set(1, 0.78, 1);
+      cap.position.set(x, y, z);
+      cap.castShadow = true;
+      holder.add(cap);
+      root.add(holder);
+    }
 
-      const leafPositions = [
-        [-3.2, 2.95, -0.18, 1.15], [3.05, 3.1, -0.15, 1.12], [-2.2, 3.85, -0.28, 1.0],
-        [2.18, 4.02, -0.25, 1.0], [-1.05, 4.6, -0.1, 1.06], [1.2, 4.72, -0.12, 1.0],
-        [0.0, 5.25, -0.16, 1.22], [-0.45, 3.85, -0.34, 1.05], [0.52, 3.92, -0.36, 1.05]
-      ];
-
-      leafPositions.forEach(([x, y, z, size], index) => {
-        const leaves = new THREE.Mesh(
-          new THREE.IcosahedronGeometry(size, 1),
-          leafMaterials[index % leafMaterials.length]
+    function createUtilityLine() {
+      const poleXs = [-3.8, 3.8];
+      poleXs.forEach((x) => {
+        const pole = makeCylinderBetween(
+          new THREE.Vector3(x, 0, 0),
+          new THREE.Vector3(x, 5.05, 0),
+          0.19,
+          poleMaterial
         );
-        leaves.position.set(x, y, z);
-        leaves.scale.set(1.25, 0.86, 0.95);
-        leaves.castShadow = true;
-        root.add(leaves);
+        root.add(pole);
+
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 14), poleMaterial);
+        cap.position.set(x, 5.15, 0);
+        cap.scale.set(1, 0.55, 1);
+        cap.castShadow = true;
+        root.add(cap);
+
+        [4.78, 3.58].forEach((y) => {
+          const crossarm = makeCylinderBetween(
+            new THREE.Vector3(x, y, -1.42),
+            new THREE.Vector3(x, y, 1.42),
+            0.065,
+            crossarmMaterial
+          );
+          root.add(crossarm);
+        });
+
+        [
+          [4.78, -1.08], [4.18, -0.36], [3.58, 0.36], [2.98, 1.08]
+        ].forEach(([y, z]) => createInsulator(x, y, z));
+
+        const braceA = makeCylinderBetween(
+          new THREE.Vector3(x, 3.02, -1.2),
+          new THREE.Vector3(x, 4.64, -0.3),
+          0.026,
+          metalMaterial
+        );
+        const braceB = makeCylinderBetween(
+          new THREE.Vector3(x, 3.02, 1.2),
+          new THREE.Vector3(x, 4.64, 0.3),
+          0.026,
+          metalMaterial
+        );
+        root.add(braceA, braceB);
       });
+
+      [
+        [4.78, -1.08], [4.18, -0.36], [3.58, 0.36], [2.98, 1.08]
+      ].forEach(([y, z], index) => {
+        makeCable(new THREE.Vector3(-4.75, y, z), new THREE.Vector3(4.75, y, z), 0.12 + index * 0.035);
+      });
+
+      const transformer = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.34, 0.34, 0.76, 24),
+        new THREE.MeshStandardMaterial({ color: 0x6f7b76, roughness: 0.54, metalness: 0.25 })
+      );
+      transformer.rotation.z = Math.PI / 2;
+      transformer.position.set(-3.8, 3.28, 0);
+      transformer.castShadow = true;
+      transformer.receiveShadow = true;
+      root.add(transformer);
+
+      const shadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(8.8, 1.4),
+        new THREE.MeshBasicMaterial({ color: 0x6e8d8f, transparent: true, opacity: 0.18 })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.set(0, 0.01, 0.25);
+      root.add(shadow);
     }
 
     function createPerchLabel(name, visitorName) {
       const textureCanvas = document.createElement("canvas");
       const context = textureCanvas.getContext("2d");
-      const width = 320;
-      const height = 104;
+      const width = 210;
+      const height = 80;
       textureCanvas.width = width;
       textureCanvas.height = height;
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.fillStyle = "rgba(255, 255, 255, 0.88)";
-      roundRect(context, 10, 12, width - 20, height - 24, 18);
+      roundRect(context, 10, 12, width - 20, height - 24, 14);
       context.fill();
       context.strokeStyle = "rgba(25, 35, 28, 0.18)";
       context.stroke();
       context.fillStyle = "#19231c";
-      fitText(context, name, width - 42, 28);
-      context.fillText(name, width / 2, 43);
+      fitText(context, name, width - 30, 21);
+      context.fillText(name, width / 2, 33);
       if (visitorName) {
         context.fillStyle = "#2365a8";
-        fitText(context, `by ${visitorName}`, width - 46, 22);
-        context.fillText(`by ${visitorName}`, width / 2, 70);
+        fitText(context, `by ${visitorName}`, width - 34, 15);
+        context.fillText(`by ${visitorName}`, width / 2, 55);
       }
 
       const texture = new THREE.CanvasTexture(textureCanvas);
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
-      sprite.scale.set(1.78, 0.58, 1);
-      sprite.position.y = 0.86;
+      sprite.scale.set(0.82, 0.32, 1);
+      sprite.position.y = 1.12;
       return sprite;
     }
 
@@ -623,7 +787,7 @@
       const scaleGroup = new THREE.Group();
       const normalized = new THREE.Group();
       const maxDimension = Math.max(size.x, size.y, size.z) || 1;
-      const modelScale = 1.12 / maxDimension;
+      const modelScale = 1.05 / maxDimension;
 
       model.position.set(-center.x, -box.min.y, -center.z);
       model.rotation.y = Math.PI;
@@ -637,28 +801,45 @@
       scaleGroup.scale.setScalar(modelScale);
       scaleGroup.add(model);
       normalized.add(scaleGroup);
-      normalized.position.y = -0.46;
+      normalized.position.y = -0.17;
       return normalized;
     }
 
-    function loadBirdModel() {
+    function getBirdModelTemplate(name) {
+      return birdModelTemplates.get(name) || birdModelTemplates.get("default") || null;
+    }
+
+    function loadBirdModels() {
       if (birdModelLoadStarted) return;
       birdModelLoadStarted = true;
       const loader = new GLTFLoader();
+      const entries = Object.entries(BIRD_MODEL_URLS);
+      let loadedCount = 0;
+      let failedCount = 0;
 
       syncStatus.textContent = "새 모델을 불러오는 중...";
-      loader.load(
-        BIRD_MODEL_URL,
-        (gltf) => {
-          birdModelTemplate = createBirdModelTemplate(gltf.scene);
-          refreshBirds();
-          syncStatus.textContent = "새 모델을 적용했습니다.";
-        },
-        undefined,
-        () => {
-          syncStatus.textContent = "새 모델을 불러오지 못해 기본 새로 표시합니다.";
-        }
-      );
+      entries.forEach(([name, url]) => {
+        loader.load(
+          url,
+          (gltf) => {
+            birdModelTemplates.set(name, createBirdModelTemplate(gltf.scene));
+            loadedCount += 1;
+            refreshBirds();
+            syncStatus.textContent = `${loadedCount}개 새 모델을 적용했습니다.`;
+          },
+          undefined,
+          () => {
+            failedCount += 1;
+            syncStatus.textContent = failedCount === entries.length
+              ? "새 모델을 불러오지 못해 기본 새로 표시합니다."
+              : "일부 새 모델을 불러오지 못했습니다.";
+          }
+        );
+      });
+    }
+
+    function loadBirdModel() {
+      loadBirdModels();
     }
 
     function roundRect(context, x, y, width, height, radius) {
@@ -680,6 +861,27 @@
       }
     }
 
+    function hashString(value) {
+      let hash = 2166136261;
+      for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+      return hash >>> 0;
+    }
+
+    function getFaceTurn(sighting, index) {
+      const savedTurn = Number(sighting.faceTurn);
+      if (Number.isFinite(savedTurn)) return Math.min(Math.max(savedTurn, 0), 1);
+      const seed = `${sighting.savedAt || ""}|${sighting.createdAt || ""}|${sighting.visitorName || ""}|${sighting.name || ""}|${index}`;
+      return hashString(seed) / 4294967295;
+    }
+
+    function getBirdRotationY(sighting, index, spot) {
+      const turn = getFaceTurn(sighting, index);
+      return turn < 0.5 ? 0 : Math.PI;
+    }
+
     function createBird(sighting, index) {
       const fallback = palette[index % palette.length];
       const shifted = new THREE.Color(fallback);
@@ -692,23 +894,24 @@
         tail: shifted.clone().offsetHSL(-0.02, 0.06, -0.25).getHex(),
         beak: 0xd49a35
       };
-      const spot = branchSpots[index % branchSpots.length];
-      const layer = Math.floor(index / branchSpots.length);
+      const spot = wireSpots[index % wireSpots.length];
+      const layer = Math.floor(index / wireSpots.length);
       const group = new THREE.Group();
-      const scale = 0.78 + (index % 5) * 0.035;
+      const scale = 0.78;
       const mat = (color, roughness = 0.66) => new THREE.MeshStandardMaterial({ color, roughness });
 
+      const birdModelTemplate = getBirdModelTemplate(sighting.name);
       if (birdModelTemplate) {
         const model = birdModelTemplate.clone(true);
         group.add(model);
         group.add(createPerchLabel(sighting.name, sighting.visitorName));
         group.position.set(
-          spot.x + ((layer % 2) * 0.24 - 0.12),
-          spot.y + 0.2 + layer * 0.32,
-          0.92 + spot.z * 0.28 + layer * 0.08
+          spot.x + ((layer % 2) * 0.42 - 0.21),
+          spot.y + layer * 0.28,
+          spot.z + layer * 0.16
         );
-        group.rotation.y = -Math.PI / 2 + spot.r * 0.35;
-        group.scale.setScalar(scale * 1.05);
+        group.rotation.y = getBirdRotationY(sighting, index, spot);
+        group.scale.setScalar(scale * 1.08);
         group.userData.floatPhase = index * 0.77;
         group.userData.baseY = group.position.y;
         birdsGroup.add(group);
@@ -871,12 +1074,12 @@
 
       group.add(createPerchLabel(sighting.name, sighting.visitorName));
       group.position.set(
-        spot.x + ((layer % 2) * 0.24 - 0.12),
-        spot.y + 0.18 + layer * 0.32,
-        0.92 + spot.z * 0.28 + layer * 0.08
+        spot.x + ((layer % 2) * 0.42 - 0.21),
+        spot.y + 0.58 + layer * 0.28,
+        spot.z + layer * 0.16
       );
-      group.rotation.y = -Math.PI / 2 + spot.r * 0.35;
-      group.scale.setScalar(scale);
+      group.rotation.y = getBirdRotationY(sighting, index, spot);
+      group.scale.setScalar(scale * 1.12);
       group.userData.floatPhase = index * 0.77;
       group.userData.baseY = group.position.y;
       birdsGroup.add(group);
@@ -902,7 +1105,8 @@
         name: String(item.name).trim().replace(/\s+/g, " "),
         habitat: item.habitat || birdInfo.get(item.name)?.habitat || "",
         createdAt: Number(item.createdAt) || Date.now(),
-        savedAt: item.savedAt || ""
+        savedAt: item.savedAt || "",
+        faceTurn: Number.isFinite(Number(item.faceTurn)) ? Number(item.faceTurn) : undefined
       };
     }
 
@@ -959,6 +1163,30 @@
       }
     }
 
+    async function sendFaceTurnToSheet(sighting) {
+      if (!APPS_SCRIPT_URL) return;
+
+      syncStatus.textContent = "얼굴 방향을 저장 중...";
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({
+            action: "updateFaceTurn",
+            savedAt: sighting.savedAt,
+            createdAt: sighting.createdAt,
+            ownerName: sighting.visitorName,
+            birdLabel: sighting.name,
+            faceTurn: sighting.faceTurn
+          })
+        });
+        syncStatus.textContent = "얼굴 방향 저장 요청을 보냈습니다.";
+      } catch {
+        syncStatus.textContent = "얼굴 방향 저장에 실패했습니다.";
+      }
+    }
+
     function loadSightingsFromSheet() {
       if (!APPS_SCRIPT_URL) return;
 
@@ -1012,7 +1240,7 @@
       if (!sightings.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "아직 나무에 올라간 새가 없습니다.";
+        empty.textContent = "아직 전선 위에 앉은 새가 없습니다.";
         birdList.append(empty);
         return;
       }
@@ -1031,6 +1259,18 @@
         const owner = sighting.visitorName ? ` · ${sighting.visitorName}` : "";
         name.textContent = info ? `${sighting.name}${owner} · ${info.habitat}` : `${sighting.name}${owner}`;
 
+        const face = document.createElement("button");
+        face.className = "face";
+        face.type = "button";
+        face.textContent = "얼굴";
+        face.setAttribute("aria-label", `${sighting.name} 얼굴 방향 바꾸기`);
+        face.addEventListener("click", () => {
+          sightings[index].faceTurn = Math.random();
+          saveSightings();
+          refreshBirds();
+          sendFaceTurnToSheet(sightings[index]);
+        });
+
         const remove = document.createElement("button");
         remove.className = "remove";
         remove.type = "button";
@@ -1042,7 +1282,7 @@
           refreshBirds();
         });
 
-        item.append(swatch, name, remove);
+        item.append(swatch, name, face, remove);
         birdList.append(item);
       });
     }
@@ -1067,7 +1307,8 @@
         name,
         habitat: info?.habitat || "",
         createdAt: Date.now(),
-        savedAt: new Date().toISOString()
+        savedAt: new Date().toISOString(),
+        faceTurn: Math.random()
       };
       sightings.push(sighting);
       input.value = "";
@@ -1097,20 +1338,108 @@
       input.focus();
     });
 
+    function clampZoomScale(value) {
+      return Math.min(Math.max(value, 0.5), 1.55);
+    }
+
+    function getPointerDistance() {
+      const points = [...activePointers.values()];
+      if (points.length < 2) return 0;
+      return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+    }
+
+    function startDragFromPointer(event) {
+      isDraggingTree = true;
+      dragStartX = event.clientX;
+      dragStartY = event.clientY;
+      dragStartRotationY = treeRotationY;
+      dragStartRotationX = treeRotationX;
+    }
+
+    function startPinch() {
+      pinchStartDistance = getPointerDistance();
+      pinchStartZoomScale = zoomScale;
+      isDraggingTree = false;
+    }
+
+    function updatePointer(event) {
+      activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+
+    function releasePointer(event) {
+      activePointers.delete(event.pointerId);
+      if (canvas.hasPointerCapture(event.pointerId)) {
+        canvas.releasePointerCapture(event.pointerId);
+      }
+      if (activePointers.size === 1) {
+        const [remainingPointer] = activePointers.values();
+        startDragFromPointer({ clientX: remainingPointer.x, clientY: remainingPointer.y });
+        return;
+      }
+      isDraggingTree = false;
+      pinchStartDistance = 0;
+    }
+
+    canvas.addEventListener("pointerdown", (event) => {
+      updatePointer(event);
+      canvas.setPointerCapture(event.pointerId);
+      if (activePointers.size === 2) {
+        startPinch();
+        return;
+      }
+      if (activePointers.size === 1) {
+        startDragFromPointer(event);
+      }
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (!activePointers.has(event.pointerId)) return;
+      updatePointer(event);
+      if (activePointers.size >= 2) {
+        const distance = getPointerDistance();
+        if (pinchStartDistance > 0 && distance > 0) {
+          zoomScale = clampZoomScale(pinchStartZoomScale * (pinchStartDistance / distance));
+          resize();
+        }
+        return;
+      }
+      if (!isDraggingTree) return;
+      const deltaX = event.clientX - dragStartX;
+      const deltaY = event.clientY - dragStartY;
+      treeRotationY = dragStartRotationY + deltaX * 0.01;
+      treeRotationX = Math.min(Math.max(dragStartRotationX + deltaY * 0.006, -0.72), 0.72);
+    });
+
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+
+    canvas.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      zoomScale = clampZoomScale(zoomScale * (event.deltaY > 0 ? 1.08 : 0.92));
+      resize();
+    }, { passive: false });
+
     function resize() {
       const width = window.innerWidth;
       const height = window.innerHeight;
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
-      root.position.x = width < 720 ? 0.25 : 1.65;
-      camera.position.set(width < 720 ? 0 : 0.55, width < 720 ? 3.9 : 3.55, width < 720 ? 12.8 : 10.2);
-      camera.lookAt(root.position.x, 3.15, 0);
+      const isMobile = width < 720;
+      scenePivot.position.x = isMobile ? 0 : 1.45;
+      camera.position.set(
+        isMobile ? 0 : 0.45,
+        (isMobile ? 4.0 : 3.52) * Math.sqrt(zoomScale),
+        (isMobile ? 15.2 : 11.2) * zoomScale
+      );
+      camera.lookAt(scenePivot.position.x, isMobile ? 3.85 : 3.6, 0);
       camera.updateProjectionMatrix();
     }
 
     function animate(time) {
       const seconds = time * 0.001;
-      root.rotation.y = Math.sin(seconds * 0.18) * 0.08;
+      const idleSway = isDraggingTree ? 0 : Math.sin(seconds * 0.18) * 0.04;
+      scenePivot.rotation.x = treeRotationX;
+      scenePivot.rotation.y = treeRotationY + idleSway;
       birdsGroup.children.forEach((bird) => {
         bird.position.y = bird.userData.baseY + Math.sin(seconds * 1.6 + bird.userData.floatPhase) * 0.025;
       });
@@ -1125,7 +1454,7 @@
       birdSuggestions.append(option);
     });
 
-    createTree();
+    createUtilityLine();
     setVisitorName(visitorName);
     if (!visitorName) requestVisitorName();
     refreshBirds();

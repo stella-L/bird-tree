@@ -8,13 +8,54 @@ function doPost(e) {
   const birdName = String(payload.name || payload.birdName || '').trim();
   const habitat = String(payload.habitat || '').trim();
   const createdAt = payload.createdAt || '';
+  const faceTurn = Number(payload.faceTurn);
+
+  if (payload.action === 'updateFaceTurn') {
+    return updateFaceTurn(sheet, payload, faceTurn);
+  }
 
   if (!visitorName || !birdName) {
     return json({ ok: false, error: 'visitorName and birdName are required' });
   }
 
-  sheet.appendRow([savedAt, visitorName, birdName, habitat, createdAt]);
+  sheet.appendRow([
+    savedAt,
+    visitorName,
+    birdName,
+    habitat,
+    createdAt,
+    Number.isFinite(faceTurn) ? faceTurn : ''
+  ]);
   return json({ ok: true });
+}
+
+function updateFaceTurn(sheet, payload, faceTurn) {
+  if (!Number.isFinite(faceTurn)) {
+    return json({ ok: false, error: 'faceTurn is required' });
+  }
+
+  ensureHeaders(sheet);
+
+  const targetSavedAt = String(payload.savedAt || '');
+  const targetCreatedAt = String(payload.createdAt || '');
+  const targetOwnerName = String(payload.ownerName || '');
+  const targetBirdLabel = String(payload.birdLabel || '');
+  const values = sheet.getDataRange().getValues();
+
+  for (let index = 1; index < values.length; index += 1) {
+    const row = values[index];
+    const savedAtMatches = targetSavedAt && String(row[0]) === targetSavedAt;
+    const createdAtMatches = targetCreatedAt && String(row[4]) === targetCreatedAt;
+    const ownerMatches = !targetOwnerName || String(row[1]) === targetOwnerName;
+    const birdMatches = !targetBirdLabel || String(row[2]) === targetBirdLabel;
+
+    if ((savedAtMatches || createdAtMatches) && ownerMatches && birdMatches) {
+      sheet.getRange(index + 1, 6).setValue(faceTurn);
+      return json({ ok: true, updated: true });
+    }
+  }
+
+  return json({ ok: true, updated: false });
 }
 
 function doGet(e) {
@@ -29,7 +70,8 @@ function doGet(e) {
       visitorName: row[1],
       name: row[2],
       habitat: row[3],
-      createdAt: row[4]
+      createdAt: row[4],
+      faceTurn: row[5]
     }));
 
   if (callback) {
@@ -49,11 +91,25 @@ function getSheet() {
     sheet = spreadsheet.insertSheet(SHEET_NAME);
   }
 
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['savedAt', 'visitorName', 'birdName', 'habitat', 'createdAt']);
-  }
+  ensureHeaders(sheet);
 
   return sheet;
+}
+
+function ensureHeaders(sheet) {
+  const headers = ['savedAt', 'visitorName', 'birdName', 'habitat', 'createdAt', 'faceTurn'];
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    return;
+  }
+
+  const currentHeaders = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), headers.length)).getValues()[0];
+  headers.forEach((header, index) => {
+    if (currentHeaders[index] !== header) {
+      sheet.getRange(1, index + 1).setValue(header);
+    }
+  });
 }
 
 function json(value) {
